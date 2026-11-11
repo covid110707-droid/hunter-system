@@ -52,126 +52,156 @@ function weave(){
 function cloth(color){return mat(color,{roughness:.96,map:weave()})}
 function G(dx,dy,sx,sy){return Math.exp(-((dx/sx)*(dx/sx)+(dy/sy)*(dy/sy)))}
 function headGeo(){
-  var g=new T.SphereGeometry(1,48,40),p=g.attributes.position,col=[],i;
-  var sk=new T.Color(0xd2a07e),lip=new T.Color(0xa45f55),shade=new T.Color(0x94664f),blush=new T.Color(0xc98570),beard=new T.Color(0x86705f),tmp=new T.Color();
+  var g=new T.SphereGeometry(1,52,44),p=g.attributes.position,col=[],i;
+  var sk=new T.Color(0xcf9c78),lip=new T.Color(0xa0665a),shade=new T.Color(0x8a5c46),blush=new T.Color(0xc48468),beard=new T.Color(0x35271f),tmp=new T.Color();
   for(i=0;i<p.count;i++){
     var x=p.getX(i),y=p.getY(i),z=p.getZ(i),x0=x,y0=y,ax=Math.abs(x),front=z>0;
-    if(y<0){var k=Math.pow(-y,1.7);x*=1-.2*k;z*=front?1-.04*k:1-.26*k}
+    // square jaw: keep the width down to the jaw line, then cut in to a broad chin
+    if(y<0){var k=Math.pow(-y,2.2);x*=1-.3*k;z*=front?1-.02*k:1-.24*k}
+    x*=1+.07*G(0,y0+.52,1,.16);
     if(!front&&y>-.3)z*=1.07;
-    if(y>.2)x*=1-.05*(y-.2);
+    if(y>.2)x*=1-.06*(y-.2);
     if(front){
       var w=Math.min(1,z*2.4),dz=0;
-      dz+=.24*G(x0,y0+.1,.1,.2);dz+=.1*G(x0,y0+.24,.15,.06);
-      dz+=.055*G(x0,y0-.2,.62,.07);
-      dz-=.1*G(ax-.36,y0-.04,.17,.085);
-      dz+=.05*G(ax-.52,y0+.16,.2,.15);
-      dz+=.075*G(x0,y0+.47,.24,.065);dz-=.035*G(x0,y0+.6,.3,.045);
-      dz+=.1*G(x0,y0+.84,.24,.14);
-      dz-=.05*G(ax-.62,y0+.5,.16,.2);
+      dz+=.27*G(x0,y0+.08,.085,.22);dz+=.1*G(x0,y0+.25,.14,.055);
+      dz+=.095*G(x0,y0-.19,.66,.065);
+      dz-=.13*G(ax-.36,y0-.03,.17,.08);
+      dz+=.08*G(ax-.56,y0+.1,.2,.13);
+      dz-=.11*G(ax-.58,y0+.42,.16,.2);
+      dz+=.03*G(x0,y0+.47,.2,.045);dz-=.035*G(x0,y0+.6,.3,.045);
+      dz+=.15*G(x0,y0+.84,.27,.14);
+      dz+=.05*G(ax-.62,y0+.62,.16,.12);
       z+=dz*w;
     }
     p.setXYZ(i,x,y,z);
     tmp.copy(sk);
     if(front){
-      tmp.lerp(shade,.4*G(ax-.36,y0-.04,.2,.1));
-      tmp.lerp(blush,.35*G(ax-.5,y0+.2,.2,.14)+.3*G(x0,y0+.24,.1,.08));
-      if(y0<-.3)tmp.lerp(beard,Math.min(.2,(-y0-.3)*.8));
-      tmp.lerp(beard,.15*G(x0,y0+.36,.26,.05));
-      tmp.lerp(lip,.9*G(x0,y0+.47,.2,.045));
-    }else if(y0<-.3)tmp.lerp(beard,Math.min(.3,(-y0-.3)));
+      tmp.lerp(shade,.5*G(ax-.36,y0-.03,.2,.1));
+      tmp.lerp(blush,.3*G(ax-.52,y0+.16,.2,.14)+.25*G(x0,y0+.25,.1,.08));
+      tmp.lerp(shade,.55*G(ax-.58,y0+.42,.16,.2));
+      var jaw=y0<-.3?Math.min(1,(-y0-.3)*3.2):0,mous=G(x0,y0+.365,.3,.045),side=Math.min(1,Math.max(0,(ax-.3)*2.2));
+      var stub=Math.max(jaw*(0.55+.45*side),mous*.9)*(1-.9*G(x0,y0+.47,.17,.04));
+      tmp.lerp(beard,Math.min(.72,stub*.72));
+      tmp.lerp(lip,.6*G(x0,y0+.47,.17,.04));
+    }else if(y0<-.3)tmp.lerp(beard,Math.min(.6,(-y0-.3)*1.6));
     col.push(tmp.r,tmp.g,tmp.b);
   }
   g.setAttribute("color",new T.Float32BufferAttribute(col,3));g.computeVertexNormals();return g;
 }
-function hairGeo(){
-  var g=new T.SphereGeometry(1,36,24,0,Math.PI*2,0,Math.PI*.66),p=g.attributes.position,i;
-  for(i=0;i<p.count;i++){
-    var x=p.getX(i),y=p.getY(i),z=p.getZ(i);
-    if(z>.15&&y<.5)y=.5+(y-.5)*.12*(1-Math.min(1,Math.abs(x)*1.1))+(y-.5)*Math.min(1,Math.abs(x)*1.1)*.75;
-    var n=1+.035*Math.sin(x*23+y*17)*Math.cos(z*19+y*11)+.02*Math.sin(z*41+x*7);
-    p.setXYZ(i,x*n,y*n,z*n);
+var _streak=null;
+function streakTex(){
+  if(_streak)return _streak;
+  var c=document.createElement("canvas");c.width=c.height=128;var x=c.getContext("2d");x.fillStyle="#8c8c8c";x.fillRect(0,0,128,128);
+  for(var i=0;i<128;i++){var v=70+Math.random()*150|0;x.fillStyle="rgb("+v+","+v+","+v+")";x.fillRect(i,0,1,128)}
+  _streak=new T.CanvasTexture(c);_streak.wrapS=_streak.wrapT=T.RepeatWrapping;_streak.repeat.set(3,1);return _streak;
+}
+function buildHair(){
+  var g=group(),RX=.09,RY=.124,RZ=.11,cols=[0x2b1c11,0x33221a,0x241710,0x3d2a1c,0x1e130c];
+  var cap=new T.Mesh(new T.SphereGeometry(1,36,24,0,Math.PI*2,0,Math.PI*.62),mat(0x2b1c11,{roughness:.9,map:streakTex()}));
+  var p=cap.geometry.attributes.position,i;
+  for(i=0;i<p.count;i++){var x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+    if(z>.15&&y<.5)y=.5+(y-.5)*.1*(1-Math.min(1,Math.abs(x)*1.1))+(y-.5)*Math.min(1,Math.abs(x)*1.1)*.7;p.setXYZ(i,x,y,z)}
+  cap.geometry.computeVertexNormals();cap.scale.set(RX,RY,RZ);cap.position.set(0,.004,-.007);cap.castShadow=true;g.add(cap);
+  // individual locks swept up and back from the hairline
+  var up=new T.Vector3(0,1,0),d=new T.Vector3(),q=new T.Quaternion(),mats=cols.map(function(c){return mat(c,{roughness:.85})});
+  var seed=7;function rnd(){seed=(seed*16807)%2147483647;return seed/2147483647}
+  for(i=0;i<230;i++){
+    var phi=(rnd()-.5)*Math.PI*2,el=.1+rnd()*1.25,front=Math.cos(phi)*Math.sin(el);
+    var px=Math.sin(phi)*Math.sin(el)*RX,py=Math.cos(el)*RY+.004,pz=front*RZ-.007;
+    if(front>.1&&py<.07)continue;
+    var top=Math.max(0,1-el/.9),fr=Math.max(0,front),len=.022+.03*top+.045*fr+rnd()*.012;
+    var lk=new T.Mesh(new T.ConeGeometry(.011+.008*rnd(),len,5),mats[i%mats.length]);lk.geometry.translate(0,len/2,0);
+    d.set(px*5,.25+fr*1.1+top*.25-(el>1?.9:0),-1.2+fr*.4).normalize();
+    q.setFromUnitVectors(up,d);lk.quaternion.copy(q);lk.rotateY(rnd()*3);
+    lk.scale.set(1.5,1,.8);lk.position.set(px,py,pz);lk.castShadow=true;g.add(lk);
   }
-  g.computeVertexNormals();return g;
+  return g;
 }
 var SH={
-  tunic:[[-.27,.2,.128,.142],[-.1,.186,.126,.136],[.02,.18,.116,.12],[.11,.166,.108,.102],[.24,.17,.113,.106],[.36,.184,.13,.117],[.46,.192,.138,.12],[.53,.186,.124,.115],[.58,.16,.102,.104],[.612,.125,.084,.09],[.635,.094,.074,.08]],
-  neck:[[.5,.11,.075,.085],[.61,.085,.07,.076],[.655,.068,.063,.07],[.73,.064,.063,.07]],
-  pelvis:[[-.17,.1,.085,.09],[-.06,.172,.108,.118],[.06,.172,.105,.112]],
-  upper:[[.02,.056,.058],[-.08,.055,.061],[-.2,.046,.05],[-.3,.04,.042]],
-  fore:[[0,.041,.043],[-.07,.045,.044],[-.18,.034,.033],[-.265,.027,.023]],
-  thigh:[[.03,.088,.092,.096],[-.12,.088,.094,.096],[-.3,.07,.074],[-.48,.057,.06]],
-  shin:[[0,.056,.058],[-.11,.058,.054,.072],[-.29,.04,.044],[-.415,.034,.038]],
+  tunic:[[-.2,.186,.122,.136],[-.1,.18,.118,.13],[.02,.166,.108,.114],[.11,.152,.1,.098],[.24,.166,.114,.106],[.36,.198,.14,.122],[.46,.214,.152,.128],[.53,.2,.134,.12],[.575,.166,.104,.106],[.618,.116,.084,.092]],
+  neck:[[.48,.19,.118,.114],[.56,.158,.1,.104],[.615,.112,.084,.092],[.66,.078,.072,.08],[.74,.072,.07,.078]],
+  pelvis:[[-.17,.1,.085,.09],[-.06,.176,.11,.12],[.06,.17,.105,.112]],
+  upper:[[.02,.064,.066],[-.09,.067,.074],[-.2,.055,.058],[-.3,.046,.048]],
+  fore:[[0,.047,.049],[-.07,.054,.051],[-.18,.039,.037],[-.265,.03,.026]],
+  thigh:[[.03,.094,.098,.1],[-.12,.097,.106,.1],[-.3,.077,.084,.076],[-.48,.06,.062]],
+  shin:[[0,.058,.06],[-.11,.062,.056,.082],[-.29,.042,.046],[-.415,.035,.039]],
   shoe:[[-.075,.026,.02,.03],[-.04,.042,.026,.05],[.05,.046,.026,.045],[.13,.05,.024,.03],[.19,.034,.018,.018]]
 };
 function shoeMesh(m,s){var g=loftGeo(s?grow(SH.shoe,s):SH.shoe,{radial:16});g.rotateX(Math.PI/2);var e=new T.Mesh(g,m);e.castShadow=true;e.receiveShadow=true;return e}
+function bulge(parent,m,x,y,z,sx,sy,sz,rz){var e=mesh(new T.SphereGeometry(1,16,12),m,x,y,z);e.scale.set(sx,sy,sz);if(rz)e.rotation.z=rz;parent.add(e);return e}
 
 /* ---------- the hunter ---------- */
 function buildHunter(){
-  var skin=mat(0xd2a07e,{roughness:.62}),hairM=mat(0x1d140e,{roughness:1}),tunic=cloth(0x34435e),trousers=cloth(0x221f25),leather=mat(0x33241a,{roughness:.8});
+  var skin=mat(0xcf9c78,{roughness:.58}),tunic=cloth(0x2c3850),trousers=cloth(0x221f25),leather=mat(0x33241a,{roughness:.8});
   var J={};
   var av=group();J.av=av;
   var hips=group(0,.95,0);av.add(hips);J.hips=hips;
   hips.add(loft(SH.pelvis,trousers));
   var torso=group();hips.add(torso);J.torso=torso;
   var chestG=group();torso.add(chestG);J.chest=chestG;
-  chestG.add(loft(SH.neck,skin,{radial:20}));
+  chestG.add(loft(SH.neck,skin,{radial:24}));
   chestG.add(loft(SH.tunic,tunic,{radial:32,ur:5,vr:6}));
-  var collar=mesh(new T.TorusGeometry(.088,.012,8,24),leather,0,.633,.002);collar.rotation.x=Math.PI/2;collar.scale.y=.85;chestG.add(collar);
-  chestG.add(loft([[.075,.173,.115,.11],[.125,.173,.115,.11]],leather,{radial:32,sub:2}));
-  chestG.add(mesh(new T.BoxGeometry(.045,.04,.012),mat(0xb9a36a,{metalness:.4,roughness:.4}),0,.1,.118));
-  chestG.add(loft([[.55,.178,.118,.112],[.6,.15,.108,.104],[.645,.108,.088,.09],[.672,.086,.076,.082]],cloth(0x3f5f8a),{radial:24}));
-  chestG.add(loft([[.03,.18,.118,.122],[.16,.17,.114,.108]],cloth(0x1b1a22),{radial:32,sub:2}));
+  [1,-1].forEach(function(sd){
+    bulge(chestG,skin,sd*.085,.612,-.02,.075,.036,.06,sd*-.5);            // traps
+  });
+  chestG.add(loft([[.03,.166,.11,.116],[.16,.156,.104,.101]],cloth(0x1b1a22),{radial:32,sub:2}));
+  chestG.add(loft([[.075,.17,.113,.118],[.125,.168,.112,.114]],leather,{radial:32,sub:2}));
+  chestG.add(mesh(new T.BoxGeometry(.05,.045,.012),mat(0xb9a36a,{metalness:.8,roughness:.35}),0,.1,.118));
+  var strap=mesh(new T.BoxGeometry(.034,.44,.012),leather,.0,.37,.136);strap.rotation.z=.6;strap.rotation.x=-.08;chestG.add(strap);J.strap=strap;
   J.chestGear=group();chestG.add(J.chestGear);
   // head
   var head=group(0,.772,.014);torso.add(head);J.head=head;
-  var face=new T.Mesh(headGeo(),new T.MeshStandardMaterial({vertexColors:true,roughness:.6}));face.scale.set(.087,.117,.104);face.castShadow=true;head.add(face);
-  var white=mat(0xeeeae4,{roughness:.3}),iris=new T.MeshBasicMaterial({color:0x3a2616}),pupil=new T.MeshBasicMaterial({color:0x050505}),lids=[];
+  var face=new T.Mesh(headGeo(),new T.MeshStandardMaterial({vertexColors:true,roughness:.58}));face.scale.set(.086,.119,.105);face.castShadow=true;head.add(face);
+  var white=mat(0xe9e5de,{roughness:.3}),iris=new T.MeshBasicMaterial({color:0x4a6a7a}),pupil=new T.MeshBasicMaterial({color:0x050505}),browM=mat(0x21150d,{roughness:.9}),lids=[];
   [1,-1].forEach(function(sd){
-    var eye=group(sd*.0317,.005,.079);head.add(eye);
-    var ball=new T.Mesh(new T.SphereGeometry(.0122,14,10),white);eye.add(ball);
+    var eye=group(sd*.031,.0045,.078);head.add(eye);
+    eye.add(new T.Mesh(new T.SphereGeometry(.0122,14,10),white));
     var ir=new T.Mesh(new T.CircleGeometry(.0062,14),iris);ir.position.z=.0121;eye.add(ir);
     var pu=new T.Mesh(new T.CircleGeometry(.003,10),pupil);pu.position.z=.0124;eye.add(pu);
-    var lid=new T.Mesh(new T.SphereGeometry(.0136,14,10,0,Math.PI*2,0,Math.PI*.5),skin);eye.add(lid);lids.push(lid);
-    var low=new T.Mesh(new T.SphereGeometry(.0134,14,8,0,Math.PI*2,Math.PI*.72,Math.PI*.28),skin);eye.add(low);
-    var brow=mesh(new T.BoxGeometry(.032,.0055,.008),hairM,sd*.0335,.0305,.095);brow.rotation.z=sd*-.14;brow.rotation.y=sd*.25;brow.castShadow=false;head.add(brow);
+    var lid=new T.Mesh(new T.SphereGeometry(.0138,14,10,0,Math.PI*2,0,Math.PI*.5),skin);eye.add(lid);lids.push(lid);
+    eye.add(new T.Mesh(new T.SphereGeometry(.0135,14,8,0,Math.PI*2,Math.PI*.7,Math.PI*.3),skin));
+    var brow=mesh(new T.BoxGeometry(.04,.009,.012),browM,sd*.0325,.0235,.098);brow.rotation.z=sd*.2;brow.rotation.y=sd*.28;brow.castShadow=false;head.add(brow);
     var ear=mesh(new T.SphereGeometry(.021,10,8),skin,sd*.086,-.004,-.006);ear.scale.set(.45,1,.7);head.add(ear);
   });
-  J.lid=function(closed){lids.forEach(function(l){l.rotation.x=closed?1.2:-.25})};J.lid(false);
-  var hairG=group();head.add(hairG);J.hair=hairG;
-  var hr=new T.Mesh(hairGeo(),hairM);hr.scale.set(.0935,.1235,.111);hr.position.set(0,.005,-.007);hr.castShadow=true;hairG.add(hr);
+  J.lid=function(closed){lids.forEach(function(l){l.rotation.x=closed?1.2:.02})};J.lid(false);
+  J.hair=buildHair();head.add(J.hair);
   J.helmet=group();head.add(J.helmet);
-  // arms
+  // arms: bare, with deltoid, biceps, triceps and forearm shape
   function arm(side){
-    var sh=group(side*.188,.525,0);torso.add(sh);
-    var delt=mesh(new T.SphereGeometry(.058,16,12),tunic,0,-.014,0);delt.scale.set(1,1.1,1.05);sh.add(delt);
-    sh.add(loft(grow(SH.upper,.006),tunic,{radial:18}));
-    var cuff=mesh(new T.TorusGeometry(.048,.008,6,18),tunic,0,-.295,0);cuff.rotation.x=Math.PI/2;sh.add(cuff);
+    var sh=group(side*.204,.522,0);torso.add(sh);
+    bulge(sh,skin,side*.006,-.012,0,.072,.082,.074);
+    sh.add(loft(SH.upper,skin,{radial:20}));
+    bulge(sh,skin,0,-.115,.03,.042,.085,.042);
+    bulge(sh,skin,0,-.13,-.032,.044,.095,.04);
+    var band=mesh(new T.TorusGeometry(.061,.008,6,18),leather,0,-.2,0);band.rotation.x=Math.PI/2;sh.add(band);
     var el=group(0,-.3,0);sh.add(el);
-    el.add(mesh(new T.SphereGeometry(.041,12,10),skin));
+    el.add(mesh(new T.SphereGeometry(.046,12,10),skin));
     el.add(loft(SH.fore,skin,{radial:18}));
-    el.add(loft(grow(SH.fore.slice(1),.005),leather,{radial:18}));
+    bulge(el,skin,side*.012,-.075,.012,.034,.075,.034);
+    el.add(loft(grow(SH.fore.slice(2),.005),leather,{radial:18}));
     var hand=group(0,-.27,0);el.add(hand);
-    var palm=mesh(new T.BoxGeometry(.07,.08,.024),skin,0,-.04,0);hand.add(palm);
-    for(var f=0;f<4;f++){var fg=mesh(new T.CapsuleGeometry(.0085,.05,3,8),skin,(f-1.5)*.0185,-.105,.01);fg.rotation.x=-.4;hand.add(fg)}
-    var th=mesh(new T.CapsuleGeometry(.0095,.036,3,8),skin,side*-.04,-.045,.012);th.rotation.z=side*-.6;th.rotation.x=-.3;hand.add(th);
+    hand.add(mesh(new T.BoxGeometry(.076,.084,.027),skin,0,-.04,0));
+    for(var f=0;f<4;f++){var fg=mesh(new T.CapsuleGeometry(.0092,.05,3,8),skin,(f-1.5)*.02,-.105,.01);fg.rotation.x=-.4;hand.add(fg)}
+    var th=mesh(new T.CapsuleGeometry(.0102,.036,3,8),skin,side*-.043,-.045,.012);th.rotation.z=side*-.6;th.rotation.x=-.3;hand.add(th);
     var grip=group(0,-.06,.02);hand.add(grip);
     var pg=group();sh.add(pg);var gg=group();el.add(gg);
     return{sh:sh,el:el,hand:grip,pauldron:pg,gauntlet:gg};
   }
   J.armL=arm(1);J.armR=arm(-1);
   function leg(side){
-    var hip=group(side*.09,-.06,0);hips.add(hip);
+    var hip=group(side*.092,-.06,0);hips.add(hip);
     hip.add(loft(SH.thigh,trousers,{radial:20}));
+    bulge(hip,trousers,side*.012,-.2,.04,.07,.16,.07);
     var knee=group(0,-.48,0);hip.add(knee);
-    knee.add(mesh(new T.SphereGeometry(.052,12,10),trousers));
+    knee.add(mesh(new T.SphereGeometry(.056,12,10),trousers));
     knee.add(loft(SH.shin,trousers,{radial:18}));
-    var shoe=shoeMesh(leather);shoe.position.set(0,-.425,.03);knee.add(shoe);
-    knee.add(loft([[-.17,.054,.056,.066],[-.29,.045,.049],[-.415,.039,.043]],leather,{radial:18}));
+    knee.add(loft([[-.17,.056,.058,.072],[-.29,.046,.05],[-.415,.04,.044]],leather,{radial:18}));
+    var shoe=shoeMesh(leather,.004);shoe.position.set(0,-.425,.03);knee.add(shoe);
     var bg=group();knee.add(bg);var cg=group();hip.add(cg);
     return{hip:hip,knee:knee,boot:bg,cuisse:cg};
   }
   J.legL=leg(1);J.legR=leg(-1);
-  J.back=group(0,.4,-.14);chestG.add(J.back);
+  J.back=group(0,.4,-.15);chestG.add(J.back);
   J.weapon=group();
   return J;
 }
@@ -282,7 +312,7 @@ function buildChest(tier,color,J){
     return;
   }
   // plate: ridge, gorget, faulds, layered pauldrons, tabard, cape
-  var ridge=mesh(new T.BoxGeometry(.014,.4,.02),m,0,.33,.142);ridge.rotation.x=-.06;J.chestGear.add(ridge);
+  var ridge=mesh(new T.BoxGeometry(.014,.4,.02),m,0,.33,.15);ridge.rotation.x=-.06;J.chestGear.add(ridge);
   var gorget=mesh(new T.TorusGeometry(.092,.022,8,24),m,0,.628,.002);gorget.rotation.x=Math.PI/2;gorget.scale.y=.85;J.chestGear.add(gorget);
   J.chestGear.add(ring(.1,.006,gold,.645,1,.85));
   J.chestGear.add(loft(grow([[.085,.173,.115,.11],[.125,.173,.115,.11]],.024),mat(0x3a2718,{roughness:.7}),{radial:32,sub:2}));
@@ -296,14 +326,14 @@ function buildChest(tier,color,J){
   var tab=new T.Mesh(new T.PlaneGeometry(.13,.36,2,6),cloth(new T.Color(color).multiplyScalar(.55)));tab.geometry.translate(0,-.18,0);(function(){var q=tab.geometry.attributes.position;for(var n=0;n<q.count;n++)if(q.getY(n)<-.3)q.setX(n,q.getX(n)*.15)})();tab.material.side=T.DoubleSide;tab.position.set(0,.03,.152);tab.rotation.x=-.1;tab.castShadow=true;J.chestGear.add(tab);J.tabard=tab;
   [J.armL,J.armR].forEach(function(a,ix){
     var sd=ix?-1:1,big=tier>=4?1.18:1;
-    var p=mesh(new T.SphereGeometry(.095*big,20,12,0,Math.PI*2,0,Math.PI*.56),m,sd*.014,.018,0);p.scale.set(1.14,.9,1.14);a.pauldron.add(p);
-    var p2=mesh(new T.SphereGeometry(.086*big,18,8,0,Math.PI*2,Math.PI*.3,Math.PI*.3),m,sd*.01,-.03,0);p2.scale.set(1.08,1.25,1.12);a.pauldron.add(p2);
-    var tr=ring(.092*big,.006,gold,.012,1.14,1.14);tr.position.x=sd*.014;a.pauldron.add(tr);
+    var p=mesh(new T.SphereGeometry(.104*big,20,12,0,Math.PI*2,0,Math.PI*.56),m,sd*.014,.022,0);p.scale.set(1.14,.9,1.14);a.pauldron.add(p);
+    var p2=mesh(new T.SphereGeometry(.094*big,18,8,0,Math.PI*2,Math.PI*.3,Math.PI*.3),m,sd*.01,-.03,0);p2.scale.set(1.08,1.25,1.12);a.pauldron.add(p2);
+    var tr=ring(.1*big,.006,gold,.014,1.14,1.14);tr.position.x=sd*.014;a.pauldron.add(tr);
     a.pauldron.add(loft(grow(SH.upper.slice(1),.014),m,{radial:18}));
     if(tier>=3){var sp=mesh(new T.ConeGeometry(.02,.09,5),gold,sd*.02,.11,0);a.pauldron.add(sp)}
   });
   if(tier>=3)[J.legL,J.legR].forEach(function(l){
-    l.cuisse.add(loft([[-.1,.094,.1,.06],[-.28,.076,.082,.05],[-.42,.064,.07,.046]],m,{radial:18}));
+    l.cuisse.add(loft([[-.1,.104,.112,.07],[-.28,.086,.094,.06],[-.42,.07,.076,.05]],m,{radial:18}));
   });
   if(tier>=2){
     var cg=new T.PlaneGeometry(.4,1.02,8,14);cg.translate(0,-.51,0);
@@ -316,20 +346,20 @@ function buildChest(tier,color,J){
 function buildGauntlets(tier,color,J){
   var m=gearMat(tier,color),gold=goldMat();
   [J.armL,J.armR].forEach(function(a){
-    a.gauntlet.add(loft([[.02,.062,.062],[-.03,.052,.053],[-.09,.056,.055],[-.2,.043,.042],[-.262,.037,.034]],m,{radial:18}));
-    a.gauntlet.add(mesh(new T.BoxGeometry(.084,.1,.038),m,0,-.318,.003));
-    if(tier>=1){var cop=mesh(new T.SphereGeometry(.05,12,10),m,0,.0,-.018);cop.scale.set(1,1.1,1);a.gauntlet.add(cop)}
-    if(tier>=2){a.gauntlet.add(ring(.063,.005,gold,.02));a.gauntlet.add(ring(.038,.005,gold,-.262));
+    a.gauntlet.add(loft([[.02,.068,.068],[-.03,.058,.058],[-.09,.063,.06],[-.2,.048,.046],[-.262,.04,.037]],m,{radial:18}));
+    a.gauntlet.add(mesh(new T.BoxGeometry(.09,.104,.04),m,0,-.318,.003));
+    if(tier>=1){var cop=mesh(new T.SphereGeometry(.056,12,10),m,0,.0,-.018);cop.scale.set(1,1.1,1);a.gauntlet.add(cop)}
+    if(tier>=2){a.gauntlet.add(ring(.069,.005,gold,.02));a.gauntlet.add(ring(.041,.005,gold,-.262));
       for(var k=0;k<4;k++)a.gauntlet.add(mesh(new T.SphereGeometry(.011,8,6),gold,(k-1.5)*.02,-.362,.02))}
   });
 }
 function buildBoots(tier,color,J){
   var m=gearMat(tier,color),gold=goldMat();
   [J.legL,J.legR].forEach(function(l){
-    l.boot.add(loft([[tier>=1?-.03:-.14,.064,.066,.072],[-.11,.064,.062,.078],[-.29,.047,.051],[-.415,.041,.045]],m,{radial:18}));
+    l.boot.add(loft([[tier>=1?-.03:-.14,.068,.07,.076],[-.11,.07,.066,.09],[-.29,.05,.054],[-.415,.043,.047]],m,{radial:18}));
     var s=shoeMesh(m,.008);s.position.set(0,-.425,.03);if(tier>=2)s.scale.z=1.18;l.boot.add(s);
-    if(tier>=1){var kn=mesh(new T.SphereGeometry(.064,14,10),m,0,.0,.02);kn.scale.set(1,1.05,.8);l.boot.add(kn)}
-    if(tier>=2){l.boot.add(ring(.066,.005,gold,-.04,1,1));l.boot.add(ring(.047,.005,gold,-.38,1,1.05));
+    if(tier>=1){var kn=mesh(new T.SphereGeometry(.068,14,10),m,0,.0,.02);kn.scale.set(1,1.05,.8);l.boot.add(kn)}
+    if(tier>=2){l.boot.add(ring(.07,.005,gold,-.04,1,1.02));l.boot.add(ring(.05,.005,gold,-.38,1,1.05));
       var fin=mesh(new T.ConeGeometry(.03,.07,4),gold,0,.03,.07);fin.rotation.x=.6;l.boot.add(fin)}
   });
 }
@@ -544,7 +574,7 @@ function create(){
     gear=g||{};J.cape=J.tabard=J.plume=null;
     [J.helmet,J.chestGear,J.back,J.weapon,J.armL.pauldron,J.armR.pauldron,J.armL.gauntlet,J.armR.gauntlet,J.legL.boot,J.legR.boot,J.legL.cuisse,J.legR.cuisse].forEach(clear);
     if(gear.helmet)J.helmet.add(buildHelmet(gear.helmet.tier,gear.helmet.color,J));
-    J.hair.visible=!gear.helmet;
+    J.hair.visible=!gear.helmet;J.strap.visible=!gear.chest;
     if(gear.chest)buildChest(gear.chest.tier,gear.chest.color,J);
     if(gear.gauntlets)buildGauntlets(gear.gauntlets.tier,gear.gauntlets.color,J);
     if(gear.boots)buildBoots(gear.boots.tier,gear.boots.color,J);
@@ -601,7 +631,7 @@ function create(){
     var sleep=pose==="sleep",br=Math.sin(t*(sleep?1.45:2.1));
     J.chest.scale.set(1+br*.008,1,1+br*(sleep?.07:.028));
     if(sleep){J.armL.sh.rotation.x=-.38-br*.03;J.head.rotation.z=.22+Math.sin(t*.21)*.03}
-    else{J.armL.sh.position.y=J.armR.sh.position.y=.525+br*.005;J.hips.rotation.y=Math.sin(t*.45)*.06;J.torso.rotation.z=Math.sin(t*.6)*.012;
+    else{J.armL.sh.position.y=J.armR.sh.position.y=.522+br*.005;J.hips.rotation.y=Math.sin(t*.45)*.06;J.torso.rotation.z=Math.sin(t*.6)*.012;
       J.head.rotation.y=Math.sin(t*.33)*.3;J.head.rotation.x=Math.sin(t*.27)*.05;J.lid((t%4.6)<.13)}
     if(J.cape&&J.cape.visible){var cp=J.cape.geometry.attributes.position,b=J.cape.userData.base;
       for(var i=0;i<cp.count;i++){var v=-b[i*3+1]/1.02,x=b[i*3];cp.setZ(i,-v*v*.16-Math.sin(t*1.7+v*4.2+x*3)*.04*v);cp.setX(i,x*(1+v*.25)+Math.sin(t*1.2+v*3)*.02*v)}
