@@ -242,6 +242,12 @@ input:focus{border-color:var(--glow);outline:none;box-shadow:0 0 0 3px rgba(84,2
 .fchip{flex:none;font-family:var(--display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:7px 13px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
 .fchip[aria-pressed=true]{border-color:var(--glow);color:var(--glow);background:rgba(84,200,255,.1)}
 .atag.str{color:#ff9a7a}.atag.iq{color:#b9a4ff}
+.scenes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scene{text-align:left;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:rgba(4,8,18,.45);display:flex;flex-direction:column;gap:2px;min-width:0;transition:border-color .2s,background .2s}
+.scene.sel{border-color:var(--glow);background:rgba(84,200,255,.1);box-shadow:0 0 16px rgba(84,200,255,.15)}
+.scene b{font-family:var(--display);font-size:14.5px;font-weight:600}
+.scene span{font-size:12.5px;color:var(--muted)}
+.scene i{font-style:normal;font-family:var(--display);font-size:12px;margin-top:4px}
 .slot span,.boost span{display:block;font-family:var(--display);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .slot b{font-family:var(--display);font-size:16px;font-weight:600;overflow-wrap:anywhere}
 .slot b.empty{color:var(--muted);font-weight:500}
@@ -381,6 +387,15 @@ var RARITY={common:{n:"Common",c:"#9fb0c8"},uncommon:{n:"Uncommon",c:"#5fe08a"},
 var RORDER=["common","uncommon","rare","epic","legendary"];
 var SLOTS=["weapon","helmet","chest","gauntlets","boots"];
 var SLOT_NAME={weapon:"Weapon",helmet:"Helmet",chest:"Chest",gauntlets:"Gauntlets",boots:"Boots"};
+var SCENES=[
+  {id:"camp",name:"Ruined Keep Camp",attr:"str",boost:3,note:"Campfire under a full moon"},
+  {id:"twin",name:"Twin-Moon Hill",attr:"iq",boost:5,note:"Dusk on a grassy hill"},
+  {id:"war",name:"Burning Frontier",attr:"str",boost:5,note:"A besieged keep at sundown"},
+  {id:"autumn",name:"Autumn Keep",attr:"iq",boost:4,note:"The castle road in leaf fall"},
+  {id:"vale",name:"Blue Moon Vale",attr:"iq",boost:5,note:"A glowing stream below the tower"},
+  {id:"meadow",name:"Castle Meadow",attr:"str",boost:4,note:"Wildflowers at first light"}
+];
+function sceneOf(){for(var i=0;i<SCENES.length;i++)if(SCENES[i].id===state.scene)return SCENES[i];return SCENES[0]}
 function I(id,slot,name,r,attr,boost,price,shape){return{id:id,slot:slot,name:name,r:r,attr:attr,boost:boost,price:price,shape:shape||null}}
 var ITEMS=[
   I("w_club","weapon","Oak Club","common","str",1,60,"club"),
@@ -440,7 +455,7 @@ function defaults(){return{
     {id:"job",name:"Job research",xp:30,min:30,step:20,bonus:15},
     {id:"hustle",name:"Side hustle research",xp:30,min:30,step:20,bonus:15}
   ],
-  days:{},challenges:{},types:{},owned:[],equip:{weapon:null,helmet:null,chest:null,gauntlets:null,boots:null}
+  days:{},challenges:{},types:{},owned:[],scene:"camp",equip:{weapon:null,helmet:null,chest:null,gauntlets:null,boots:null}
 };}
 function normalize(s){
   var d=defaults();if(!s||typeof s!=="object")return d;
@@ -459,6 +474,7 @@ function normalize(s){
   d.quests.forEach(function(q){if(q.locked){q.xp=CUSTOM_XP;q.min=0;q.bonus=0}});
   if(s.types&&typeof s.types==="object")for(var k in s.types)if(s.types[k]==="str"||s.types[k]==="iq")d.types[k]=s.types[k];
   d.quests.forEach(function(q){d.types[q.id]=q.type});
+  if(SCENES.some(function(x){return x.id===s.scene}))d.scene=s.scene;
   if(Array.isArray(s.owned))s.owned.forEach(function(id){if(item(id)&&d.owned.indexOf(id)<0)d.owned.push(id)});
   if(s.equip&&typeof s.equip==="object")SLOTS.forEach(function(sl){
     var it=item(s.equip[sl]||(sl==="chest"?s.equip.armor:null));if(it&&it.slot===sl&&d.owned.indexOf(it.id)>=0)d.equip[sl]=it.id});
@@ -634,7 +650,7 @@ function nextNotice(){
 /* ---- attributes, gold, gear ---- */
 function item(id){for(var i=0;i<ITEMS.length;i++)if(ITEMS[i].id===id)return ITEMS[i];return null}
 function owns(id){return state.owned.indexOf(id)>=0}
-function boostFor(type){var b=0;SLOTS.forEach(function(s){var it=item(state.equip[s]);if(it&&it.attr===type)b+=it.boost});return b}
+function boostFor(type){var b=sceneOf().attr===type?sceneOf().boost:0;SLOTS.forEach(function(s){var it=item(state.equip[s]);if(it&&it.attr===type)b+=it.boost});return b}
 function boosted(x,q){return Math.round(x*(1+boostFor(q.type)/100))}
 function goldEarned(){var g=0,k,j;for(k in state.days){var d=state.days[k];if(d&&d.gold)for(j in d.gold)g+=Number(d.gold[j])||0}return g}
 function goldSpent(){var g=0;state.owned.forEach(function(id){var it=item(id);if(it)g+=it.price});return g}
@@ -688,10 +704,10 @@ function ensureStage(){
   stage.canvas.setAttribute("role","img");
   stage.canvas.setAttribute("aria-label","Your hunter at a campfire in a moonlit field");
   poseBtn=h("button",{class:"btn sm poseb",type:"button",onclick:togglePose});
-  stageEl=h("div",{class:"stage"},[stage.canvas,h("div",{class:"hint",text:"Drag to look around · tap your hunter or the fire"}),poseBtn]);
+  stageEl=h("div",{class:"stage"},[stage.canvas,h("div",{class:"hint",text:"Drag to look around · tap your hunter"}),poseBtn]);
   stage.onTap(togglePose);
   var hr=new Date().getHours();
-  stage.setGear(gearSpec());
+  stage.setScene(state.scene);stage.setGear(gearSpec());
   stage.setPose(hr>=22||hr<7?"sleep":"stand");
   poseLabel();
 }
@@ -709,7 +725,7 @@ function equip(it){
 function renderHero(){
   ensureStage();
   var g=gold();
-  if(stage){stage.setGear(gearSpec());stage.setPose(stage.getPose());stage.setActive(current==="hero"&&!document.hidden)}
+  if(stage){stage.setScene(state.scene);stage.setGear(gearSpec());stage.setPose(stage.getPose());stage.setActive(current==="hero"&&!document.hidden)}
   function slotCell(sl){
     var it=item(state.equip[sl]);
     return h("button",{class:"slot"+(shopSlot===sl?" sel":""),type:"button","aria-label":SLOT_NAME[sl]+": "+(it?it.name:"empty")+". Show in shop",
@@ -738,6 +754,11 @@ function renderHero(){
       h("div",null,[h("div",{class:"eyebrow",text:"Avatar and shop"}),h("h1",{text:"Armory"})]),
       h("div",{class:"purse num"},[h("b",{text:String(g)}),h("span",{text:"gold"})])]),
     stageEl||h("div",{class:"card nostage"},[h("p",{class:"note",text:window.HunterScene?"The 3D view could not start on this device. Your gear and boosts still work.":"Loading the 3D view..."})]),
+    h("div",{class:"card"},[h("h2",{text:"Location"}),
+      h("div",{class:"scenes"},SCENES.map(function(sc){var on=state.scene===sc.id;
+        return h("button",{class:"scene"+(on?" sel":""),type:"button","aria-pressed":on?"true":"false",onclick:function(){if(!on)act(function(){state.scene=sc.id})}},[
+          h("b",{text:sc.name}),h("span",{text:sc.note}),h("i",{class:"atag "+sc.attr,text:"+"+sc.boost+"% "+(sc.attr==="str"?"Strength":"IQ")+" XP"})])})),
+      h("p",{class:"note",style:"margin-top:10px",text:"Your hunter gets the boost of whichever location they are in. Move any time."})]),
     h("div",{class:"card"},[h("h2",{text:"Equipped"}),
       h("div",{class:"loadout"},SLOTS.map(slotCell).concat([
         h("div",{class:"boosts num"},[
