@@ -143,7 +143,7 @@ main{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px 18px 28px;scrollbar-w
 /* forms */
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
 .field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted);flex:1;min-width:104px}
-input[type=time],input[type=text],input[type=number],input[type=password],textarea{font:inherit;
+input[type=time],input[type=text],input[type=number],input[type=password],textarea,select{font:inherit;
   background:rgba(4,8,18,.7);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);width:100%;min-width:0}
 input:focus{border-color:var(--glow);outline:none;box-shadow:0 0 0 3px rgba(84,200,255,.15)}
 .btn{font-family:var(--display);font-size:13px;letter-spacing:.1em;text-transform:uppercase;padding:11px 16px;border-radius:10px;
@@ -208,20 +208,56 @@ input:focus{border-color:var(--glow);outline:none;box-shadow:0 0 0 3px rgba(84,2
 .attr span:nth-child(2){color:var(--muted)}
 
 /* setup */
-.qedit{display:grid;grid-template-columns:1fr 74px auto;gap:8px;align-items:center}
+.qedit{display:grid;grid-template-columns:1fr 104px auto;gap:8px;align-items:center}
 .qedit+.qedit{margin-top:8px}
 .stackg{display:flex;flex-direction:column;gap:10px}
 
+/* attributes, gold, armory */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--display);font-size:11px;letter-spacing:.1em;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 10px;white-space:nowrap}
+.chip b{color:var(--text);font-size:13px;letter-spacing:0}
+.chip.g{border-color:rgba(255,201,92,.4)}.chip.g b{color:var(--gold)}
+.qt{display:inline-block;margin-left:8px;font-family:var(--display);font-size:10px;letter-spacing:.12em;padding:1px 7px;border-radius:10px;border:1px solid var(--line);color:var(--muted);vertical-align:2px}
+.qt.str{color:#ff9a7a;border-color:rgba(255,154,122,.4)}.qt.iq{color:#b9a4ff;border-color:rgba(185,164,255,.4)}
+.alv{font-family:var(--display);color:var(--glow);margin-left:6px}
+.purse{text-align:right;line-height:1.1}
+.purse b{display:block;font-family:var(--display);font-size:28px;color:var(--gold);text-shadow:0 0 14px rgba(255,201,92,.45)}
+.purse span{font-size:12px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;font-family:var(--display)}
+.hero{display:grid;grid-template-columns:minmax(0,150px) 1fr;gap:16px;align-items:center}
+.avatar svg{width:100%;height:auto;display:block}
+.loadout{display:flex;flex-direction:column;gap:12px;min-width:0}
+.slot span,.boost span{display:block;font-family:var(--display);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.slot b{font-family:var(--display);font-size:16px;font-weight:600;overflow-wrap:anywhere}
+.slot b.empty{color:var(--muted);font-weight:500}
+.boost{border-top:1px solid rgba(84,160,255,.14);padding-top:12px}
+.boost b{font-family:var(--display);font-size:26px;color:var(--glow);text-shadow:0 0 12px rgba(84,200,255,.5)}
+.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:11px 0;border-top:1px solid rgba(84,160,255,.1)}
+.item:first-child{border-top:0;padding-top:0}
+.item.just{animation:pop .5s var(--ease)}
+.glyph{width:42px;height:42px;border-radius:11px;border:1.5px solid;display:grid;place-items:center;background:rgba(4,8,18,.6)}
+.glyph svg{width:24px;height:24px}
+.imain{min-width:0}
+.iname{font-weight:600;overflow-wrap:anywhere}
+.item.on .iname{color:var(--r)}
+.imeta{font-size:13px;color:var(--muted)}
+.rar{color:var(--r);font-family:var(--display);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-right:8px}
+.btn.sm{padding:8px 12px;font-size:12px;min-width:86px}
+.qlock{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end}
+.fixed{text-align:right;padding-bottom:6px}
+.fixed b{display:block;font-family:var(--display);color:var(--gold)}
+.fixed span{font-size:11.5px;color:var(--muted)}
+
 /* ---- tab bar ---- */
-nav{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);background:rgba(6,11,24,.92);
+nav{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line);background:rgba(6,11,24,.92);
   padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));position:relative}
 .tab{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 6px;color:var(--muted);
-  font-family:var(--display);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;transition:color .25s}
+  font-family:var(--display);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;transition:color .25s}
 .tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s var(--ease)}
 .tab[aria-current=page]{color:var(--glow)}
 .tab[aria-current=page] svg{transform:translateY(-2px);filter:drop-shadow(0 0 6px var(--glow))}
 .tab .dot{position:absolute;top:6px;right:calc(50% - 16px);width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold)}
-.ink{position:absolute;top:-1px;left:6px;height:2px;width:calc((100% - 12px)/5);background:var(--glow);box-shadow:0 0 10px var(--glow);
+.ink{position:absolute;top:-1px;left:6px;height:2px;width:calc((100% - 12px)/6);background:var(--glow);box-shadow:0 0 10px var(--glow);
   transition:transform .35s var(--ease);border-radius:2px}
 
 /* ---- effects ---- */
@@ -292,12 +328,14 @@ nav{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--
       <div class="trow"><span class="tname" id="tName">Hunter</span><span class="tlv num">LV <b id="tLevel">1</b></span></div>
       <div class="xpbar" id="tBarWrap" role="progressbar" aria-label="XP to next level" aria-valuemin="0" aria-valuemax="100"><i id="tBar" style="width:0%"></i></div>
       <div class="trow sub num"><span id="tXp"></span><span id="tToday"></span></div>
+      <div class="chips num"><span class="chip">STR <b id="tStr">1</b></span><span class="chip">IQ <b id="tIq">1</b></span><span class="chip g"><b id="tGold">0</b> gold</span></div>
     </div>
   </header>
   <main id="main">
     <section class="page" id="page-quests"></section>
     <section class="page" id="page-sleep" hidden></section>
     <section class="page" id="page-gate" hidden></section>
+    <section class="page" id="page-hero" hidden></section>
     <section class="page" id="page-stats" hidden></section>
     <section class="page" id="page-setup" hidden></section>
   </main>
@@ -307,6 +345,7 @@ nav{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--
     <button class="tab" type="button" data-page="quests"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12.5l2.5 2.5 4.5-5.5"/></svg>Quests</button>
     <button class="tab" type="button" data-page="sleep"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>Sleep</button>
     <button class="tab" type="button" data-page="gate"><svg viewBox="0 0 24 24"><path d="M12 3l8 9-8 9-8-9z"/><path d="M12 8l3.5 4-3.5 4-3.5-4z"/></svg>Gate<i class="dot" id="gateDot" hidden></i></button>
+    <button class="tab" type="button" data-page="hero"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M12 8v8M9 11h6"/></svg>Armory</button>
     <button class="tab" type="button" data-page="stats"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Stats</button>
     <button class="tab" type="button" data-page="setup"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Setup</button>
   </nav>
@@ -318,7 +357,24 @@ nav{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--
 "use strict";
 var LS_KEY="hunter-system-v1", DAY_START_H=4, ALL_BONUS=50;
 var TIMING={read:{min:20,step:10,bonus:10},meditate:{min:10,step:5,bonus:5},job:{min:30,step:20,bonus:15},hustle:{min:30,step:20,bonus:15}};
-var PAGES=["quests","sleep","gate","stats","setup"];
+var PAGES=["quests","sleep","gate","hero","stats","setup"];
+var GOLD_PER=10,CUSTOM_XP=25,DEFTYPE={gym:"str",read:"iq",meditate:"iq",job:"iq",hustle:"iq"};
+var RARITY={common:{n:"Common",c:"#9fb0c8"},uncommon:{n:"Uncommon",c:"#5fe08a"},rare:{n:"Rare",c:"#54a8ff"},epic:{n:"Epic",c:"#b77bff"},legendary:{n:"Legendary",c:"#ffc95c"}};
+var RORDER=["common","uncommon","rare","epic","legendary"];
+var ITEMS=[
+  {id:"w_club",slot:"weapon",shape:"club",name:"Oak Club",r:"common",boost:1,price:60},
+  {id:"w_dagger",slot:"weapon",shape:"dagger",name:"Rusted Dagger",r:"common",boost:2,price:100},
+  {id:"w_sword",slot:"weapon",shape:"sword",name:"Iron Shortsword",r:"uncommon",boost:4,price:300},
+  {id:"w_sabre",slot:"weapon",shape:"sabre",name:"Stormsteel Sabre",r:"rare",boost:7,price:750},
+  {id:"w_halberd",slot:"weapon",shape:"halberd",name:"Voidglass Halberd",r:"epic",boost:10,price:1800},
+  {id:"w_great",slot:"weapon",shape:"great",name:"Sunfall Greatsword",r:"legendary",boost:15,price:4000},
+  {id:"a_jerkin",slot:"armor",name:"Leather Jerkin",r:"common",boost:1,price:60},
+  {id:"a_vest",slot:"armor",name:"Padded Vest",r:"common",boost:2,price:100},
+  {id:"a_chain",slot:"armor",name:"Chainmail Hauberk",r:"uncommon",boost:4,price:300},
+  {id:"a_plate",slot:"armor",name:"Warden's Plate",r:"rare",boost:7,price:750},
+  {id:"a_night",slot:"armor",name:"Nightweave Armor",r:"epic",boost:10,price:1800},
+  {id:"a_aegis",slot:"armor",name:"Sovereign Aegis",r:"legendary",boost:15,price:4000}
+];
 var REDUCED=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 var POOL=[
   {title:"Read 100 pages over the weekend",target:100,unit:"pages",xp:150},
@@ -340,7 +396,7 @@ function defaults(){return{
     {id:"job",name:"Job research",xp:30,min:30,step:20,bonus:15},
     {id:"hustle",name:"Side hustle research",xp:30,min:30,step:20,bonus:15}
   ],
-  days:{},challenges:{}
+  days:{},challenges:{},types:{},owned:[],equip:{weapon:null,armor:null}
 };}
 function normalize(s){
   var d=defaults();if(!s||typeof s!=="object")return d;
@@ -354,12 +410,19 @@ function normalize(s){
     return{id:String(q.id),name:String(q.name),xp:Math.max(1,Math.min(500,Number(q.xp)||10)),
       min:Math.max(0,Math.min(600,Math.round(Number(t.min)||0))),
       step:Math.max(1,Math.min(240,Math.round(Number(t.step)||10))),
-      bonus:Math.max(0,Math.min(500,Math.round(Number(t.bonus)||0)))}});
+      bonus:Math.max(0,Math.min(500,Math.round(Number(t.bonus)||0))),
+      type:(q.type==="str"||q.type==="iq"||q.type==="")?q.type:(DEFTYPE[q.id]||""),locked:!!q.locked}});
+  d.quests.forEach(function(q){if(q.locked){q.xp=CUSTOM_XP;q.min=0;q.bonus=0}});
+  if(s.types&&typeof s.types==="object")for(var k in s.types)if(s.types[k]==="str"||s.types[k]==="iq")d.types[k]=s.types[k];
+  d.quests.forEach(function(q){d.types[q.id]=q.type});
+  if(Array.isArray(s.owned))s.owned.forEach(function(id){if(item(id)&&d.owned.indexOf(id)<0)d.owned.push(id)});
+  if(s.equip&&typeof s.equip==="object")["weapon","armor"].forEach(function(sl){
+    var it=item(s.equip[sl]);if(it&&it.slot===sl&&d.owned.indexOf(it.id)>=0)d.equip[sl]=it.id});
   if(s.days&&typeof s.days==="object")d.days=s.days;
   if(s.challenges&&typeof s.challenges==="object")d.challenges=s.challenges;
   d.updatedAt=Number(s.updatedAt)||0;return d;
 }
-var state=defaults();
+var state=normalize(defaults());
 try{var raw=localStorage.getItem(LS_KEY);if(raw)state=normalize(JSON.parse(raw));}catch(e){}
 
 /* ---- dates ---- */
@@ -524,16 +587,147 @@ function nextNotice(){
 }
 
 /* ---- state change wrapper ---- */
+/* ---- attributes, gold, gear ---- */
+function item(id){for(var i=0;i<ITEMS.length;i++)if(ITEMS[i].id===id)return ITEMS[i];return null}
+function owns(id){return state.owned.indexOf(id)>=0}
+function boostPct(){var b=0;["weapon","armor"].forEach(function(s){var it=item(state.equip[s]);if(it)b+=it.boost});return b}
+function boosted(x){return Math.round(x*(1+boostPct()/100))}
+function goldEarned(){var g=0,k,j;for(k in state.days){var d=state.days[k];if(d&&d.gold)for(j in d.gold)g+=Number(d.gold[j])||0}return g}
+function goldSpent(){var g=0;state.owned.forEach(function(id){var it=item(id);if(it)g+=it.price});return g}
+function gold(){return goldEarned()-goldSpent()}
+function syncTypes(){state.quests.forEach(function(q){state.types[q.id]=q.type||""})}
+function attrXp(type){
+  var x=0,k,j;
+  for(k in state.days){var d=state.days[k];if(d&&d.done)for(j in d.done)if(state.types[j]===type)x+=Number(d.done[j])||0}
+  return x;
+}
+function attrLevel(xp){var l=1;while(xp>=60+(l-1)*20){xp-=60+(l-1)*20;l++}return{level:l,into:xp,need:60+(l-1)*20}}
+var TYPE_NAME={str:"Strength",iq:"IQ","":"Neither"};
+
 function act(fn){
-  var before=levelOf(totalXp()).level;
+  var before=levelOf(totalXp()).level,sb=attrLevel(attrXp("str")).level,ib=attrLevel(attrXp("iq")).level;
   fn();save();
-  var after=levelOf(totalXp()).level;
+  var after=levelOf(totalXp()).level,sa=attrLevel(attrXp("str")).level,ia=attrLevel(attrXp("iq")).level;
   if(after>before){
     var rb=rankOf(before),ra=rankOf(after);
     notify({kind:"level",tag:"System notice",from:before,to:after,title:"Level up",body:"You reached level "+after+". Keep climbing."});
     if(ra!==rb)notify({kind:"rank",tag:"Rank promotion",from:rb,to:ra,title:ra+"-Rank hunter",body:"Promoted from "+rb+"-Rank to "+ra+"-Rank."});
   }
+  if(sa>sb)notify({kind:"level",tag:"Attribute increased",from:sb,to:sa,title:"Strength up",body:"Strength is now level "+sa+"."});
+  if(ia>ib)notify({kind:"level",tag:"Attribute increased",from:ib,to:ia,title:"IQ up",body:"IQ is now level "+ia+"."});
   render(true);
+}
+
+/* ---- hero page: avatar and shop ---- */
+function weaponArt(it){
+  var c=RARITY[it.r].c,g=svg("g",{transform:"translate(150 138) rotate("+(it.shape==="halberd"?8:20)+")",style:"filter:drop-shadow(0 0 5px "+c+")"});
+  function add(tag,a){a.stroke=a.stroke||"rgba(255,255,255,.35)";a["stroke-width"]="1";g.append(svg(tag,a))}
+  var wood="#6b4a2b",steel=c;
+  if(it.shape==="club"){add("path",{d:"M-4 14 L-4 -10 L-9 -58 Q0 -66 9 -58 L4 -10 L4 14Z",fill:wood})}
+  else if(it.shape==="halberd"){
+    add("rect",{x:"-2.5",y:"-96",width:"5",height:"130",fill:wood});
+    add("path",{d:"M2 -86 Q28 -80 24 -54 Q14 -64 2 -62Z",fill:steel});
+    add("polygon",{points:"-4,-96 4,-96 0,-114",fill:steel});
+  }else{
+    var big=it.shape==="great";
+    add("rect",{x:big?"-3.5":"-3",y:"0",width:big?"7":"6",height:big?"22":"16",fill:wood});
+    add("rect",{x:big?"-16":"-9",y:big?"-5":"-3",width:big?"32":"18",height:big?"6":"4",fill:"#c9d4e6"});
+    if(it.shape==="dagger")add("polygon",{points:"-5,-3 5,-3 0,-36",fill:steel});
+    else if(it.shape==="sword")add("polygon",{points:"-5,-3 5,-3 5,-58 0,-70 -5,-58",fill:steel});
+    else if(it.shape==="sabre")add("path",{d:"M-4 -3 L5 -3 Q15 -42 -2 -76 Q4 -40 -4 -3Z",fill:steel});
+    else add("polygon",{points:"-9,-5 9,-5 9,-76 0,-94 -9,-76",fill:steel});
+  }
+  return g;
+}
+function avatar(){
+  var w=item(state.equip.weapon),a=item(state.equip.armor);
+  var tier=Math.max(w?RORDER.indexOf(w.r):-1,a?RORDER.indexOf(a.r):-1);
+  var aura=tier>=0?RARITY[RORDER[tier]].c:"#54c8ff",ac=a?RARITY[a.r].c:null,at=a?RORDER.indexOf(a.r):-1;
+  var s=svg("svg",{viewBox:"0 0 200 236",role:"img","aria-label":"Your avatar"+(a?", wearing "+a.name:"")+(w?", holding "+w.name:"")});
+  function add(tag,attrs){var e=svg(tag,attrs);s.append(e);return e}
+  add("circle",{cx:"100",cy:"112",r:"88",fill:aura,opacity:".07"});
+  add("ellipse",{cx:"100",cy:"222",rx:"58",ry:"9",fill:aura,opacity:".28"});
+  if(at>=3)add("path",{d:"M72 80 L42 204 L158 204 L128 80Z",fill:ac,opacity:".3"});
+  add("rect",{x:"78",y:"150",width:"18",height:"62",rx:"6",fill:"#1a2a4a",stroke:"#2c4677"});
+  add("rect",{x:"104",y:"150",width:"18",height:"62",rx:"6",fill:"#1a2a4a",stroke:"#2c4677"});
+  add("rect",{x:"74",y:"204",width:"24",height:"13",rx:"4",fill:a?ac:"#0f1b33",opacity:a?".7":"1"});
+  add("rect",{x:"102",y:"204",width:"24",height:"13",rx:"4",fill:a?ac:"#0f1b33",opacity:a?".7":"1"});
+  add("path",{d:"M70 88 L54 140",stroke:"#22355c","stroke-width":"14","stroke-linecap":"round",fill:"none"});
+  add("path",{d:"M130 88 L149 136",stroke:"#22355c","stroke-width":"14","stroke-linecap":"round",fill:"none"});
+  add("path",{d:"M68 80 Q100 70 132 80 L124 156 L76 156Z",fill:"#22355c",stroke:"#2c4677"});
+  if(a){
+    add("path",{d:"M74 84 Q100 76 126 84 L120 132 Q100 143 80 132Z",fill:ac,opacity:".88",stroke:"rgba(255,255,255,.4)"});
+    if(at>=1){add("ellipse",{cx:"66",cy:"86",rx:"14",ry:"9",fill:ac,stroke:"rgba(255,255,255,.4)"});add("ellipse",{cx:"134",cy:"86",rx:"14",ry:"9",fill:ac,stroke:"rgba(255,255,255,.4)"})}
+    add("rect",{x:"76",y:"142",width:"48",height:"8",rx:"2",fill:ac,opacity:".6"});
+    if(at>=2)add("polygon",{points:"100,96 110,109 100,122 90,109",fill:"#04060d",opacity:".55"});
+  }
+  add("circle",{cx:"100",cy:"52",r:"20",fill:"#2a3f6b"});
+  add("path",{d:"M76 58 Q76 24 100 22 Q124 24 124 58 Q113 40 100 40 Q87 40 76 58Z",fill:a&&at>=2?ac:"#14213d",stroke:"#2c4677"});
+  add("rect",{x:"90",y:"51",width:"7",height:"3",rx:"1.5",fill:"#9fe3ff"});
+  add("rect",{x:"103",y:"51",width:"7",height:"3",rx:"1.5",fill:"#9fe3ff"});
+  if(at>=4)add("ellipse",{cx:"100",cy:"14",rx:"20",ry:"5",fill:"none",stroke:ac,"stroke-width":"2.5",style:"filter:drop-shadow(0 0 5px "+ac+")"});
+  if(w)s.append(weaponArt(w));
+  add("circle",{cx:"150",cy:"138",r:"7",fill:"#2a3f6b",stroke:"#2c4677"});
+  return s;
+}
+function glyph(it){
+  var c=RARITY[it.r].c,s=svg("svg",{viewBox:"0 0 24 24","aria-hidden":"true"});
+  var d=it.slot==="weapon"?"M5 19l3-3M7 14l3 3M9 15L19 5v3L11 17":"M7 4l5 2 5-2 2 4-3 2v9H8v-9L5 8z";
+  s.append(svg("path",{d:d,fill:"none",stroke:c,"stroke-width":"1.8","stroke-linecap":"round","stroke-linejoin":"round"}));
+  return h("span",{class:"glyph",style:"border-color:"+c+";box-shadow:0 0 12px "+c+"33"},[s]);
+}
+var armed=null,boughtId=null;
+function buy(it){
+  if(owns(it.id)||gold()<it.price)return;
+  if(armed!==it.id){armed=it.id;renderHero();return}
+  armed=null;boughtId=it.id;
+  act(function(){state.owned.push(it.id);state.equip[it.slot]=it.id});
+  toast(it.name+" bought and equipped");
+}
+function equip(it){
+  armed=null;
+  act(function(){state.equip[it.slot]=state.equip[it.slot]===it.id?null:it.id});
+}
+function renderHero(){
+  var g=gold(),w=item(state.equip.weapon),a=item(state.equip.armor),b=boostPct();
+  function slotLine(label,it){
+    return h("div",{class:"slot"},[h("span",{text:label}),
+      it?h("b",{style:"color:"+RARITY[it.r].c,text:it.name}):h("b",{class:"empty",text:"Empty"})]);
+  }
+  function row(it){
+    var own=owns(it.id),on=state.equip[it.slot]===it.id,R=RARITY[it.r],btn;
+    if(!own){
+      var can=g>=it.price;
+      btn=h("button",{class:"btn sm"+(armed===it.id?" gold":""),type:"button",disabled:!can,
+        "aria-label":(armed===it.id?"Confirm buying ":"Buy ")+it.name+" for "+it.price+" gold",
+        text:armed===it.id?"Confirm":it.price+" g",onclick:function(){buy(it)}});
+    }else{
+      btn=h("button",{class:"btn sm"+(on?"":" ghost"),type:"button","aria-pressed":on?"true":"false",text:on?"Equipped":"Equip",onclick:function(){equip(it)}});
+    }
+    return h("li",{class:"item"+(on?" on":"")+(boughtId===it.id?" just":""),style:"--r:"+R.c},[
+      glyph(it),
+      h("div",{class:"imain"},[h("div",{class:"iname",text:it.name}),
+        h("div",{class:"imeta num"},[h("span",{class:"rar",text:R.n}),"+"+it.boost+"% habit XP"])]),
+      btn]);
+  }
+  function shop(slot,title){
+    return h("div",{class:"card"},[h("h2",{text:title}),
+      h("ul",{class:"items"},ITEMS.filter(function(i){return i.slot===slot}).map(row))]);
+  }
+  fill($("page-hero"),[
+    h("div",{class:"phead"},[
+      h("div",null,[h("div",{class:"eyebrow",text:"Avatar and shop"}),h("h1",{text:"Armory"})]),
+      h("div",{class:"purse num"},[h("b",{text:String(g)}),h("span",{text:"gold"})])]),
+    h("div",{class:"card hero"},[
+      h("div",{class:"avatar"},[avatar()]),
+      h("div",{class:"loadout"},[
+        slotLine("Weapon",w),slotLine("Armor",a),
+        h("div",{class:"boost num"},[h("b",{text:"+"+b+"%"}),h("span",{text:"XP on every habit"})])])]),
+    h("p",{class:"note",text:"Each habit you clear pays "+GOLD_PER+" gold, however long you spend on it. Gear boosts the XP from habits while it is equipped."}),
+    shop("weapon","Melee weapons"),
+    shop("armor","Armor")
+  ]);
+  boughtId=null;
 }
 
 /* ---- status strip ---- */
@@ -549,6 +743,9 @@ function updateTop(animate){
   shownXp=xp;
   $("tXp").textContent=L.into+" / "+L.need+" XP";
   $("tToday").textContent="+"+dayXp(state.days[today()])+" today";
+  $("tStr").textContent=String(attrLevel(attrXp("str")).level);
+  $("tIq").textContent=String(attrLevel(attrXp("iq")).level);
+  $("tGold").textContent=String(gold());
   var c=challenge();$("gateDot").hidden=!(isWeekend()&&!c.done);
 }
 
@@ -569,8 +766,8 @@ function renderQuests(){
     for(var i=6;i>=0;i--){var dd=state.days[ymd(addDays(lt,-i))];dots.push(h("i",{class:dd&&dd.done&&dd.done[q.id]!=null?"on":""}))}
     var main=h("button",{class:"qmain",type:"button","aria-pressed":on?"true":"false","aria-label":q.name+(timed?", "+m+" minutes":"")},[
       h("span",{class:"box"},[check()]),
-      h("span",null,[h("span",{class:"qname",text:q.name}),h("div",{class:"dots",title:"Last 7 days"},dots)]),
-      h("span",{class:"xp num",text:"+"+(on?done[q.id]:xpFor(q,m))+" XP"})]);
+      h("span",null,[h("span",{class:"qname",text:q.name}),q.type?h("span",{class:"qt "+q.type,text:q.type==="str"?"STR":"IQ"}):null,h("div",{class:"dots",title:"Last 7 days"},dots)]),
+      h("span",{class:"xp num",text:"+"+(on?done[q.id]:boosted(xpFor(q,m)))+" XP"})]);
     main.addEventListener("click",function(){toggleQuest(q)});
     var timer=null;
     if(timed){
@@ -591,24 +788,24 @@ function renderQuests(){
     h("div",{class:"bonus num"+(all?" on":"")},[
       h("span",{text:all?"Full clear bonus earned":"Clear every quest today"}),
       h("span",{text:"+"+ALL_BONUS+" XP"})]),
-    h("p",{class:"note",text:"Set the minutes you spent, then tap the quest to clear it. You can add more time later. The day resets at 04:00."})
+    h("p",{class:"note",text:"Set the minutes you spent, then tap the quest to clear it. You can add more time later. Each cleared quest pays "+GOLD_PER+" gold. The day resets at 04:00."})
   ]);
   justId=null;
 }
 function questEl(q){return document.querySelector('[data-q="'+q.id+'"]')}
 function toggleQuest(q){
   var t=today(),day0=state.days[t]||{},was=(day0.done||{})[q.id]!=null,hadBonus=!!day0.bonus;
-  var m=q.min>0?minsFor(q,day0):0,gain=xpFor(q,m);
+  var m=q.min>0?minsFor(q,day0):0,gain=boosted(xpFor(q,m));
   if(!was)justId=q.id;
   act(function(){
     var d=state.days[t]||(state.days[t]={});d.done=d.done||{};
-    if(was){delete d.done[q.id];if(d.mins){pending[q.id]=d.mins[q.id];delete d.mins[q.id]}}
-    else{d.done[q.id]=gain;if(q.min>0){d.mins=d.mins||{};d.mins[q.id]=m}}
+    if(was){delete d.done[q.id];if(d.gold)delete d.gold[q.id];if(d.mins){pending[q.id]=d.mins[q.id];delete d.mins[q.id]}}
+    else{d.done[q.id]=gain;d.gold=d.gold||{};d.gold[q.id]=GOLD_PER;if(q.min>0){d.mins=d.mins||{};d.mins[q.id]=m}}
     var all=state.quests.length>0&&state.quests.every(function(x){return d.done[x.id]!=null});
     d.bonus=all?ALL_BONUS:0;
   });
   if(!was){
-    floatXp(questEl(q),"+"+gain+" XP");
+    floatXp(questEl(q),"+"+gain+" XP · +"+GOLD_PER+"g");
     if(!hadBonus&&state.days[t].bonus)toast("All quests cleared · +"+ALL_BONUS+" XP bonus");
   }
 }
@@ -616,7 +813,7 @@ function adjust(q,dir){
   var t=today(),d=state.days[t]||{},on=(d.done||{})[q.id]!=null;
   var m=Math.max(q.min,Math.min(600,minsFor(q,d)+dir*q.step));
   if(!on){pending[q.id]=m;renderQuests();return}
-  var before=Number(d.done[q.id])||0,now=xpFor(q,m);
+  var before=Number(d.done[q.id])||0,now=boosted(xpFor(q,m));
   act(function(){d.mins=d.mins||{};d.mins[q.id]=m;d.done[q.id]=now});
   if(now>before)floatXp(questEl(q),"+"+(now-before)+" XP");
 }
@@ -793,6 +990,12 @@ function renderStats(){
       h("div",{class:"tile"},[h("b",{text:String(streak(hasQuest))}),h("span",{text:"Day streak"})]),
       h("div",{class:"tile"},[h("b",{text:String(streak(sleptOnTime))}),h("span",{text:"Sleep streak"})]),
       h("div",{class:"tile"},[h("b",{text:String(gates)}),h("span",{text:"Gates cleared"})])]),
+    h("div",{class:"card"},[h("h2",{text:"Attributes"}),
+      (function(){var x=attrXp("str"),A=attrLevel(x);return h("div",{class:"attr num"},[h("span",null,["Strength ",h("b",{class:"alv",text:"Lv "+A.level})]),h("span",{text:A.into+" / "+A.need+" XP"}),
+        h("div",{class:"xpbar"},[h("i",{style:"width:"+Math.round(A.into/A.need*100)+"%"})])])})(),
+      (function(){var x=attrXp("iq"),A=attrLevel(x);return h("div",{class:"attr num"},[h("span",null,["IQ ",h("b",{class:"alv",text:"Lv "+A.level})]),h("span",{text:A.into+" / "+A.need+" XP"}),
+        h("div",{class:"xpbar"},[h("i",{style:"width:"+Math.round(A.into/A.need*100)+"%"})])])})(),
+      h("p",{class:"note",style:"margin-top:12px",text:"Strength grows from physical habits and IQ from reading, research and other mind work. Set each habit's type in Setup."})]),
     h("div",{class:"card"},[h("h2",{text:"Rank ladder"}),h("div",{class:"ladder"},ladder)]),
     h("div",{class:"card"},[h("h2",{text:"XP per day, last 14 days"}),
       h("div",{class:"log num"},days.map(function(o,idx){
@@ -822,16 +1025,23 @@ function renderSetup(){
       var v=Math.round(Number(x.value));if(v>=lo&&v<=hi)quiet(function(){q[key]=v})}});
     return h("label",{class:"field"},[label,x]);
   }
+  function typeSel(id,val,onpick){
+    var sel=h("select",{id:id,"aria-label":"Attribute"},[h("option",{value:"str",text:"Strength"}),h("option",{value:"iq",text:"IQ"}),h("option",{value:"",text:"Neither"})]);
+    sel.value=val||"";if(onpick)sel.addEventListener("change",function(){onpick(sel.value)});return sel;
+  }
   var qrows=state.quests.map(function(q,i){
     var n=h("input",{type:"text",id:"q-name-"+q.id,maxlength:"40",value:q.name,"aria-label":"Quest name",onchange:function(){var v=n.value.trim();if(v)quiet(function(){q.name=v})}});
+    var ts=typeSel("q-type-"+q.id,q.type,function(v){quiet(function(){q.type=v;syncTypes()})});
     return h("div",{class:"qblock"},[
       h("div",{class:"qtop"},[n,h("button",{class:"btn bad",type:"button",text:"✕","aria-label":"Remove "+q.name,onclick:function(){quiet(function(){state.quests.splice(i,1)});renderSetup()}})]),
-      h("div",{class:"qnums"},[numField(q,"xp","Base XP",1,500),numField(q,"min","Min minutes",0,600),numField(q,"step","Extra every",1,240),numField(q,"bonus","XP per extra",0,500)])]);
+      q.locked?h("div",{class:"qlock"},[h("label",{class:"field"},["Builds",ts]),h("div",{class:"fixed num"},[h("b",{text:CUSTOM_XP+" XP"}),h("span",{text:"fixed"})])])
+      :h("div",null,[h("div",{class:"qnums"},[numField(q,"xp","Base XP",1,500),numField(q,"min","Min minutes",0,600),numField(q,"step","Extra every",1,240),numField(q,"bonus","XP per extra",0,500)]),
+        h("label",{class:"field",style:"margin-top:8px"},["Builds",ts])])]);
   });
-  var nq=h("input",{type:"text",id:"newQuestName",maxlength:"40",placeholder:"New quest, e.g. Cold shower","aria-label":"New quest name"});
-  var nx=h("input",{type:"number",id:"newQuestXp",min:"1",max:"500",value:"25","aria-label":"New quest XP"});
+  var nq=h("input",{type:"text",id:"newQuestName",maxlength:"40",placeholder:"New habit, e.g. Cold shower","aria-label":"New habit name"});
+  var nx=typeSel("newQuestType","str");
   function addQuest(){var v=nq.value.trim();if(!v)return;
-    quiet(function(){state.quests.push({id:"q"+Date.now().toString(36),name:v,xp:Math.max(1,Math.min(500,Math.round(Number(nx.value)||25))),min:0,step:10,bonus:0})});renderSetup()}
+    quiet(function(){state.quests.push({id:"q"+Date.now().toString(36),name:v,xp:CUSTOM_XP,min:0,step:10,bonus:0,type:nx.value,locked:true});syncTypes()});renderSetup()}
   var keyIn=h("input",{type:"password",id:"pplxKey",autocomplete:"off",placeholder:"pplx-...",value:pplxKey,onchange:function(){
     pplxKey=keyIn.value.trim();try{if(pplxKey)localStorage.setItem(PPLX_KEY,pplxKey);else localStorage.removeItem(PPLX_KEY)}catch(e){}
     aiMsg="";renderSetup();toast(pplxKey?"Key saved on this device":"Key removed")}});
@@ -853,7 +1063,7 @@ function renderSetup(){
       h("p",{class:"note",style:"margin-top:10px",text:"Wake-up XP drops by 10 for each hour after that time."})]),
     h("div",{class:"card"},[h("h2",{text:"Daily quests and XP"})].concat(qrows,[
       h("div",{class:"qedit",style:"margin-top:14px"},[nq,nx,h("button",{class:"btn",type:"button",text:"Add",onclick:addQuest})]),
-      h("p",{class:"note",style:"margin-top:10px",text:"Base XP is earned at the minimum minutes, plus the extra XP for each further block. Set minimum minutes to 0 for a quest that is not timed. Changes apply to future completions."})])),
+      h("p",{class:"note",style:"margin-top:10px",text:"Base XP is earned at the minimum minutes, plus the extra XP for each further block. Set minimum minutes to 0 for a quest that is not timed. Habits you add are worth a fixed "+CUSTOM_XP+" XP that cannot be changed. Changes apply to future completions."})])),
     h("div",{class:"card stackg"},[h("h2",{text:"This weekend's challenge",style:"margin:0"}),
       c.done?h("p",{class:"note",text:"Already cleared. You can set the next one from Saturday."}):h("label",{class:"field"},["Challenge",ct]),
       c.done?null:h("div",{class:"row"},[h("label",{class:"field"},["Target",cn]),h("label",{class:"field"},["Unit",cu]),
@@ -877,14 +1087,14 @@ function renderSetup(){
       h("button",{class:"btn bad",type:"button",text:resetArmed?"Press again to erase everything":"Erase all progress",onclick:function(){
         if(!resetArmed){resetArmed=true;renderSetup();return}
         var keep={name:state.name,reward:state.reward,sleep:state.sleep,quests:state.quests};pending={};
-        state=defaults();state.name=keep.name;state.reward=keep.reward;state.sleep=keep.sleep;state.quests=keep.quests;
+        state=defaults();state.name=keep.name;state.reward=keep.reward;state.sleep=keep.sleep;state.quests=keep.quests;syncTypes();
         save();resetArmed=false;lastGatePct=0;shownXp=null;updateTop(false);renderSetup();toast("Progress erased")}})])
   ]);
 }
 
 /* ---- routing ---- */
 var current="quests";
-var RENDER={quests:renderQuests,sleep:renderSleep,gate:renderGate,stats:renderStats,setup:renderSetup};
+var RENDER={quests:renderQuests,sleep:renderSleep,gate:renderGate,hero:renderHero,stats:renderStats,setup:renderSetup};
 function render(animate){updateTop(animate);RENDER[current]()}
 function show(name,animate){
   if(PAGES.indexOf(name)<0)name="quests";
