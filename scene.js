@@ -206,6 +206,100 @@ function buildHunter(){
   return J;
 }
 
+/* ---------- sculpted body (MakeHuman base mesh data, CC0) ---------- */
+function loadBody(url){
+  return fetch(url).then(function(r){if(!r.ok)throw new Error("body "+r.status);return r.arrayBuffer()}).then(function(buf){
+    var n=new DataView(buf).getUint32(0,true),meta=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,n))),o=4+n,nv=meta.nv;
+    function take(Type,count){var a=new Type(buf.slice(o,o+count*Type.BYTES_PER_ELEMENT));o+=count*Type.BYTES_PER_ELEMENT;return a}
+    return{meta:meta,pos:take(Float32Array,nv*3),col:take(Float32Array,nv*3),si:take(Uint8Array,nv*4),sw:take(Uint8Array,nv*4),idx:take(nv<65536?Uint16Array:Uint32Array,meta.ni)};
+  });
+}
+function buildBody(D){
+  var meta=D.meta,lm=meta.lm,geo=new T.BufferGeometry(),J={kind:"body"},i;
+  geo.setAttribute("position",new T.BufferAttribute(D.pos,3));geo.setAttribute("color",new T.BufferAttribute(D.col,3));
+  geo.setAttribute("skinIndex",new T.BufferAttribute(new Uint16Array(D.si),4));geo.setAttribute("skinWeight",new T.BufferAttribute(D.sw,4,true));
+  geo.setIndex(new T.BufferAttribute(D.idx,1));geo.computeVertexNormals();
+  var B={},H={},R={},list=[],root=null;
+  meta.bones.forEach(function(b){var bone=new T.Bone();bone.name=b.n;H[b.n]=new T.Vector3().fromArray(b.h);
+    R[b.n]=new T.Vector3().fromArray(b.t).sub(H[b.n]);bone.userData.len=R[b.n].length();R[b.n].normalize();
+    if(b.p){bone.position.copy(H[b.n]).sub(H[b.p]);B[b.p].add(bone)}else{bone.position.copy(H[b.n]);root=bone}
+    B[b.n]=bone;list.push(bone)});
+  root.updateMatrixWorld(true);
+  var body=new T.SkinnedMesh(geo,new T.MeshStandardMaterial({vertexColors:true,roughness:.52,envMapIntensity:.5}));
+  body.add(root);body.bind(new T.Skeleton(list));body.frustumCulled=false;body.castShadow=true;body.receiveShadow=true;
+  var av=group();av.add(body);J.av=av;J.bones=B;
+  var front=new T.Vector3(0,0,1);
+  function anchor(bone,at,dir,sr,sl){
+    var g=group(),y=dir.clone().negate().normalize(),z=front.clone().addScaledVector(y,-front.dot(y)).normalize(),x=new T.Vector3().crossVectors(y,z);
+    g.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(x,y,z));g.position.copy(at).sub(H[bone]);g.scale.set(sr,sl,sr);B[bone].add(g);return g;
+  }
+  function limb(sd){
+    var s=sd>0?"_l":"_r",ua="upperarm"+s,la="lowerarm"+s,hd="hand"+s;
+    var across=H["index_01"+s].clone().sub(H["pinky_01"+s]),fd=R["middle_01"+s],palm=new T.Vector3().crossVectors(across,fd).normalize();if(sd>0)palm.negate();
+    var grip=anchor(hd,H[hd].clone().lerp(H["middle_01"+s],.55).addScaledVector(palm,.022),R[la],1,1);
+    return{sh:B[ua],el:B[la],hand:grip,palm:palm,s:s,
+      pauldron:anchor(ua,H[ua],R[ua],1.16,B[ua].userData.len/.3),
+      gauntlet:anchor(la,H[la],R[la],1.12,B[la].userData.len/.27)};
+  }
+  function lower(sd){
+    var s=sd>0?"_l":"_r",th="thigh"+s,ca="calf"+s;
+    return{hip:B[th],knee:B[ca],cuisse:anchor(th,H[th],R[th],1.14,B[th].userData.len/.48),boot:anchor(ca,H[ca],R[ca],1.14,B[ca].userData.len/.415)};
+  }
+  J.armL=limb(1);J.armR=limb(-1);J.legL=lower(1);J.legR=lower(-1);
+  // torso armour frame: old profile ran from hip joint (-.06) to shoulder joint (.522)
+  var hipY=H.thigh_l.y,shY=H.upperarm_l.y,sy=(shY-hipY)/.582,ta=group();
+  ta.position.set(0,hipY+.06*sy,.034).sub(H.spine_01);ta.scale.set(1.03,sy,.97);B.spine_01.add(ta);
+  J.chestGear=group();ta.add(J.chestGear);J.back=group(0,.4,-.15);ta.add(J.back);J.strap={visible:false};
+  // head: eyes with lids, brows, hair, helmet frame
+  var skin=mat(0xb98466,{roughness:.55}),white=mat(0xcfc8be,{roughness:.3}),iris=new T.MeshBasicMaterial({color:0x2c4654}),pupil=new T.MeshBasicMaterial({color:0x050505}),browM=mat(0x21150d,{roughness:.9}),lids=[],r=lm.eyeR;
+  [1,-1].forEach(function(sd){
+    var eye=group(sd*lm.eye[0],lm.eye[1],lm.eye[2]);eye.position.sub(H.head);B.head.add(eye);
+    eye.add(new T.Mesh(new T.SphereGeometry(r,16,12),white));
+    var ir=new T.Mesh(new T.CircleGeometry(r*.54,16),iris);ir.position.z=r*.985;eye.add(ir);
+    var pu=new T.Mesh(new T.CircleGeometry(r*.24,12),pupil);pu.position.z=r*1.0;eye.add(pu);
+    var lid=new T.Mesh(new T.SphereGeometry(r*1.1,16,10,0,Math.PI*2,0,Math.PI*.5),skin);eye.add(lid);lids.push(lid);
+    var brow=mesh(new T.BoxGeometry(.034,.006,.008),browM,sd*(lm.eye[0]+.001),lm.eye[1]+.017,lm.eye[2]+.0148);brow.position.sub(H.head);brow.rotation.z=sd*.14;brow.rotation.y=sd*.32;brow.castShadow=false;B.head.add(brow);
+  });
+  J.lid=function(closed){lids.forEach(function(l){l.rotation.x=closed?1.25:-.32})};J.lid(false);
+  var cz=(lm.skullF-.022+lm.skullB)/2,hz=(lm.skullF-.022-lm.skullB)/2,topH=lm.top-lm.eye[1];
+  J.hair=buildHair();J.hair.scale.set(lm.skullX*1.1/.09,(topH+.032)/.128,hz*1.17/.11);J.hair.position.set(0,lm.eye[1]-.006,cz-.004).sub(H.head);B.head.add(J.hair);
+  J.helmet=group();J.helmet.scale.set(lm.skullX*1.08/.086,1.02,hz*1.13/.105);J.helmet.position.set(0,lm.eye[1]-.02,cz+.004).sub(H.head);B.head.add(J.helmet);
+  J.weapon=group();
+  var q=new T.Quaternion(),pq=new T.Quaternion(),v=new T.Vector3();
+  function aim(name,x,y,z){
+    var bone=B[name],p=bone.parent;pq.identity();while(p&&p.isBone){pq.premultiply(p.quaternion);p=p.parent}
+    v.set(x,y,z).normalize().applyQuaternion(pq.invert());bone.quaternion.setFromUnitVectors(R[name],v);
+  }
+  function curl(arm,ang){["index","middle","ring","pinky"].forEach(function(f,k){for(var n=1;n<=3;n++){var nm=f+"_0"+n+arm.s;
+    v.crossVectors(R[nm],arm.palm).normalize();B[nm].quaternion.setFromAxisAngle(v,ang*(n===1?.9:1.1)*(1+k*.06))}});
+    v.crossVectors(R["thumb_02"+arm.s],arm.palm).normalize();B["thumb_02"+arm.s].quaternion.setFromAxisAngle(v,ang*.5);B["thumb_03"+arm.s].quaternion.setFromAxisAngle(v,ang*.5)}
+  J.pose=function(pose,shape){
+    list.forEach(function(b){b.quaternion.identity();b.scale.set(1,1,1)});
+    if(pose==="sleep"){
+      av.rotation.x=-Math.PI/2;av.position.set(0,.115,.98);
+      aim("upperarm_l",.3,-1,.3);aim("lowerarm_l",-.9,-.3,.42);aim("upperarm_r",-.34,-1,0);aim("lowerarm_r",-.2,-1,.16);
+      aim("thigh_l",.1,-.8,.6);aim("calf_l",.04,-.86,-.5);aim("thigh_r",-.12,-1,0);aim("calf_r",-.1,-1,-.03);
+      B.head.rotation.set(-.1,0,.2);curl(J.armL,.35);curl(J.armR,.35);
+    }else{
+      av.rotation.x=0;av.position.set(0,0,0);
+      aim("upperarm_l",.2,-1,.03);aim("lowerarm_l",.12,-1,.24);
+      if(shape==="halberd"){aim("upperarm_r",-.22,-.85,.5);aim("lowerarm_r",-.1,.08,1)}
+      else if(shape==="bow"){aim("upperarm_r",-.22,-.94,.34);aim("lowerarm_r",-.1,-.31,.95)}
+      else if(shape){aim("upperarm_r",-.2,-1,.2);aim("lowerarm_r",-.1,-.76,.64)}
+      else{aim("upperarm_r",-.2,-1,.03);aim("lowerarm_r",-.12,-1,.24)}
+      aim("thigh_l",.07,-1,.02);aim("calf_l",.035,-1,-.03);aim("thigh_r",-.07,-1,.02);aim("calf_r",-.035,-1,-.03);
+      curl(J.armL,.4);curl(J.armR,shape?1.15:.4);
+    }
+  };
+  J.tick=function(t,sleep,br){
+    var sx=1+br*.01,sz=1+br*(sleep?.05:.022);B.spine_03.scale.set(sx,1,sz);
+    [B.neck_01,B.clavicle_l,B.clavicle_r].forEach(function(b){b.scale.set(1/sx,1,1/sz)});
+    if(sleep){B.head.rotation.z=.2+Math.sin(t*.21)*.03}
+    else{B.spine_01.rotation.y=Math.sin(t*.45)*.05;B.spine_02.rotation.z=Math.sin(t*.6)*.012;B.head.rotation.set(Math.sin(t*.27)*.05,Math.sin(t*.33)*.3,0);J.lid((t%4.6)<.13)}
+  };
+  return J;
+}
+
 /* ---------- gear ---------- */
 function clear(g){while(g.children.length){var c=g.children[0];g.remove(c);c.traverse(function(o){if(o.geometry)o.geometry.dispose()})}}
 function buildWeapon(shape,tier,color){
@@ -298,7 +392,7 @@ function buildHelmet(tier,color,J){
 }
 function buildChest(tier,color,J){
   var m=gearMat(tier,color),gold=goldMat(),steel=tier>=2;
-  var body=SH.tunic.filter(function(s){return s[0]>=(tier===1?-.27:.02)&&s[0]<=.59});
+  var body=SH.tunic.filter(function(s){return s[0]>=(tier===1?-.27:.02)&&s[0]<=.63});
   if(tier===1){
     J.chestGear.add(loft(grow(body,.01),chainMat(),{radial:32,ur:22,vr:26}));
     J.chestGear.add(loft(grow([[.07,.173,.115,.11],[.13,.173,.115,.11]],.018),mat(0x2a1d14,{roughness:.8}),{radial:32,sub:2}));
@@ -565,13 +659,13 @@ function create(){
   }
 
   // hunter
-  var J=buildHunter(),holder=group();holder.add(J.av);scene.add(holder);
+  var J=null,holder=group();scene.add(holder);
   var bed=group();bed.add(mesh(new T.BoxGeometry(.78,.05,1.95),cloth(0x4a2626),0,.025,.03));
   var pillow=mesh(new T.CylinderGeometry(.11,.11,.5,10),cloth(0x5a4030),0,.09,-.86);pillow.rotation.z=Math.PI/2;bed.add(pillow);holder.add(bed);
   var ground2=group();scene.add(ground2);
   var pose="stand",gear={},shape=null;
   function applyGear(g){
-    gear=g||{};J.cape=J.tabard=J.plume=null;
+    gear=g||{};if(!J)return;J.cape=J.tabard=J.plume=null;
     [J.helmet,J.chestGear,J.back,J.weapon,J.armL.pauldron,J.armR.pauldron,J.armL.gauntlet,J.armR.gauntlet,J.legL.boot,J.legR.boot,J.legL.cuisse,J.legR.cuisse].forEach(clear);
     if(gear.helmet)J.helmet.add(buildHelmet(gear.helmet.tier,gear.helmet.color,J));
     J.hair.visible=!gear.helmet;J.strap.visible=!gear.chest;
@@ -584,7 +678,7 @@ function create(){
     placeWeapon();
   }
   function placeWeapon(){
-    var w=J.weapon;if(w.parent)w.parent.remove(w);
+    if(!J)return;var w=J.weapon;if(w.parent)w.parent.remove(w);
     if(!shape)return;
     if(pose==="sleep"){ground2.add(w);
       w.position.set(shape==="bow"?-.2:-.55,shape==="bow"?.03:.04,.78);w.rotation.set(Math.PI/2,0,shape==="bow"?Math.PI/2:1.75)}
@@ -594,7 +688,9 @@ function create(){
       else w.rotation.set(1.0,0,.3)}
   }
   function setPose(p){
-    pose=p==="sleep"?"sleep":"stand";var L=J.armL,R=J.armR;
+    pose=p==="sleep"?"sleep":"stand";if(!J)return;
+    if(J.kind==="body"){holder.rotation.y=pose==="sleep"?1.3:-.25;J.pose(pose,shape);J.lid(pose==="sleep");bed.visible=pose==="sleep"&&!(theme&&theme.rest);if(J.cape)J.cape.visible=pose!=="sleep";placeWeapon();return}
+    var L=J.armL,R=J.armR;
     [L.sh,L.el,R.sh,R.el,J.legL.hip,J.legL.knee,J.legR.hip,J.legR.knee,J.head,J.torso,J.hips].forEach(function(o){o.rotation.set(0,0,0)});
     if(pose==="sleep"){
       holder.rotation.y=1.3;holder.position.set(0,0,0);J.av.rotation.x=-Math.PI/2;J.av.position.set(0,.19,.9);
@@ -629,15 +725,16 @@ function create(){
     raf=0;if(!active)return;
     var dt=Math.min(.05,(now-last)/1000||0);last=now;t+=dt;uTime.value=t;
     var sleep=pose==="sleep",br=Math.sin(t*(sleep?1.45:2.1));
-    J.chest.scale.set(1+br*.008,1,1+br*(sleep?.07:.028));
-    if(sleep){J.armL.sh.rotation.x=-.38-br*.03;J.head.rotation.z=.22+Math.sin(t*.21)*.03}
-    else{J.armL.sh.position.y=J.armR.sh.position.y=.522+br*.005;J.hips.rotation.y=Math.sin(t*.45)*.06;J.torso.rotation.z=Math.sin(t*.6)*.012;
+    if(!J){}
+    else if(J.kind==="body")J.tick(t,sleep,br);
+    else if(sleep){J.chest.scale.set(1+br*.008,1,1+br*.07);J.armL.sh.rotation.x=-.38-br*.03;J.head.rotation.z=.22+Math.sin(t*.21)*.03}
+    else{J.chest.scale.set(1+br*.008,1,1+br*.028);J.armL.sh.position.y=J.armR.sh.position.y=.522+br*.005;J.hips.rotation.y=Math.sin(t*.45)*.06;J.torso.rotation.z=Math.sin(t*.6)*.012;
       J.head.rotation.y=Math.sin(t*.33)*.3;J.head.rotation.x=Math.sin(t*.27)*.05;J.lid((t%4.6)<.13)}
-    if(J.cape&&J.cape.visible){var cp=J.cape.geometry.attributes.position,b=J.cape.userData.base;
+    if(J&&J.cape&&J.cape.visible){var cp=J.cape.geometry.attributes.position,b=J.cape.userData.base;
       for(var i=0;i<cp.count;i++){var v=-b[i*3+1]/1.02,x=b[i*3];cp.setZ(i,-v*v*.16-Math.sin(t*1.7+v*4.2+x*3)*.04*v);cp.setX(i,x*(1+v*.25)+Math.sin(t*1.2+v*3)*.02*v)}
       cp.needsUpdate=true;J.cape.geometry.computeVertexNormals()}
-    if(J.tabard)J.tabard.rotation.x=-.1+Math.sin(t*1.4)*.035;
-    if(J.plume)J.plume.rotation.z=Math.sin(t*1.9)*.12;
+    if(J&&J.tabard)J.tabard.rotation.x=-.1+Math.sin(t*1.4)*.035;
+    if(J&&J.plume)J.plume.rotation.z=Math.sin(t*1.9)*.12;
     for(var k=0;k<anim.length;k++)anim[k](t,dt);
     if(!dragging&&!REDUCED){drift+=dt;if(drift>3)azT+=Math.sin(t*.12)*dt*.03}
     az+=(azT-az)*Math.min(1,dt*6);
@@ -650,7 +747,9 @@ function create(){
   function size(){var w=canvas.clientWidth||300,hh=canvas.clientHeight||300;renderer.setSize(w,hh,false);cam.aspect=w/hh;cam.updateProjectionMatrix()}
   if(window.ResizeObserver)new ResizeObserver(function(){size();if(active&&!raf)raf=requestAnimationFrame(frame)}).observe(canvas);
   function kick(){if(active&&!raf)raf=requestAnimationFrame(frame)}
-  buildWorld("camp");setPose("stand");
+  buildWorld("camp");
+  function adopt(j){J=j;holder.add(J.av);applyGear(gear);setPose(pose);kick()}
+  loadBody("hunter.bin").then(function(d){adopt(buildBody(d))}).catch(function(){adopt(buildHunter())});
   return{
     canvas:canvas,
     setGear:function(g){applyGear(g);kick()},
