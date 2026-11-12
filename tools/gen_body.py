@@ -90,7 +90,8 @@ def normals(P,T):
     for k in range(3): np.add.at(n,T[:,k],fn)
     return n/np.maximum(np.linalg.norm(n,axis=1,keepdims=True),1e-12)
 N=normals(P3,T)
-if N[P3[:,1].argmax()][1]<0: T=T[:,::-1].copy(); N=-N
+FLIP=N[P3[:,1].argmax()][1]<0
+if FLIP: T=T[:,::-1].copy(); N=-N
 P3[isShort]+=N[isShort]*.004
 N=normals(P3,T)
 # ---- ambient occlusion baked to vertex colour (gives the muscle definition its shading)
@@ -124,6 +125,12 @@ for i in np.where(domU==headB)[0]:
         k=min(1,(eye[1]-.047-y)/.02)*min(1,max(0,(z-(eye[2]-.075))/.03)); col[i]=col[i]*(1-.42*k)+np.array([.27,.2,.17])*.42*k
     if (y>eye[1]+.075 and z<eye[2]-.01) or y>eye[1]+.09 or (z<eye[2]-.12 and y>eye[1]-.02):
         col[i]=col[i]*.45+np.array([.16,.11,.08])*.55
+for i in np.where(domU==headB)[0]:
+    x,y,z=P3[i]; ax=abs(x)
+    if z>eye[2]-.03 and .006<ax<.056:
+        arch=eye[1]+.0165+.004*math.sin((ax-.006)/.05*math.pi)-.004*max(0,(ax-.04)/.016)
+        k=max(0,1-abs(y-arch)/.0055)
+        if k>0: col[i]=col[i]*(1-.85*k)+np.array([.1,.07,.05])*.85*k
 col[isShort]=np.array([.07,.07,.085])
 shade=(.5+.5*aoL)*(.62+.38*aoS)
 warm=np.array([1.0,.74,.64])
@@ -131,12 +138,6 @@ t=((1-aoS)*.6)[:,None]
 col=col*shade[:,None]*(1-t+t*warm)
 col[isShort]=np.array([.07,.07,.085])*(.55+.45*aoL[isShort,None])*(.7+.3*aoS[isShort,None])
 col=lin(np.clip(col,0,1)).astype(np.float32)
-# ---- skin weights (top 4, normalised to bytes)
-SI=np.zeros((len(P3),4),dtype=np.uint8); SW=np.zeros((len(P3),4),dtype=np.uint8)
-for n,o in enumerate(used):
-    w=sorted(wts[o],reverse=True)[:4] or [(1.0,0)]
-    tot=sum(a for a,_ in w); q=[int(round(a/tot*255)) for a,_ in w]; q[0]+=255-sum(q)
-    for k,(a,b) in enumerate(w): SI[n,k]=b; SW[n,k]=q[k]
 # ---- measurements for fitting gear, hair and eyes
 def axisR(bone,lo=.25,hi=.75):
     h=bones[bone]['h'];t=bones[bone]['t'];d=t-h;L=np.linalg.norm(d);d/=L
@@ -148,13 +149,82 @@ def band(y0,y1):
     m=tor&(P3[:,1]>y0)&(P3[:,1]<y1); p=P3[m]; return [float(np.abs(p[:,0]).max()),float(p[:,2].max()),float(-p[:,2].min())]
 sh=bones['upperarm_l']['h'][1]
 eidx=sorted({i for f in groups['helper-l-eye'] for i in f}); er=float((V[eidx][:,0].max()-V[eidx][:,0].min())/2)
-meta={'bones':[{'n':n,'p':bones[n]['p'],'h':[round(float(x),5) for x in bones[n]['h']],'t':[round(float(x),5) for x in bones[n]['t']]} for n in order],
- 'nv':int(len(P3)),'ni':int(T.size),
- 'lm':{'eye':[float(x) for x in eye],'eyeR':er,'jaw':[float(x) for x in jaw],'top':float(hv[:,1].max()),'skullX':float(np.abs(hv[:,0]).max()),'skullF':float(hv[:,2].max()),'skullB':float(hv[:,2].min()),
+
+LM={'eye':[float(x) for x in eye],'eyeR':er,'jaw':[float(x) for x in jaw],'top':float(hv[:,1].max()),'skullX':float(np.abs(hv[:,0]).max()),'skullF':float(hv[:,2].max()),'skullB':float(hv[:,2].min()),
        'chest':band(sh-.2,sh-.1),'waist':band(waistY+.02,waistY+.1),'hip':band(hipY-.02,hipY+.06) if (tor&(P3[:,1]>hipY-.02)&(P3[:,1]<hipY+.06)).any() else None,
-       'rUpper':axisR('upperarm_l'),'rFore':axisR('lowerarm_l'),'rThigh':axisR('thigh_l'),'rCalf':axisR('calf_l'),'waistY':float(waistY),'hemY':float(hemY)}}
+       'rUpper':axisR('upperarm_l'),'rFore':axisR('lowerarm_l'),'rThigh':axisR('thigh_l'),'rCalf':axisR('calf_l'),'waistY':float(waistY),'hemY':float(hemY)}
+# ---- fitted pieces: shells grown from the body's own surface, sharing its skin weights
+flip=bool(FLIP)
+def vnormals(faces):
+    n=np.zeros_like(V)
+    for f in faces:
+        for a in range(1,len(f)-1):
+            fn=np.cross(V[f[a]]-V[f[0]],V[f[a+1]]-V[f[0]]); n[f[0]]+=fn; n[f[a]]+=fn; n[f[a+1]]+=fn
+    n/=np.maximum(np.linalg.norm(n,axis=1,keepdims=True),1e-12)
+    return -n if flip else n
+Nt=vnormals(groups['helper-tights']); Nb=vnormals(groups['body']); Ns=vnormals(groups['helper-skirt'])
+def fdom(f):
+    c={}
+    for i in f: c[dom[i]]=c.get(dom[i],0)+1
+    return max(c,key=c.get)
+B=lambda *n:{bi[x] for x in n}
+neckY=bones['neck_01']['h'][1]
+fingers={i for n,i in bi.items() if n.split('_')[0] in('index','middle','ring','pinky','thumb')}
+sel={'cuirass':[],'uarm':[],'farm':[],'thigh':[],'shin':[]}
+armB={}
+for sd in ('_l','_r'):
+    h=bones['upperarm'+sd]['h']; t=bones['upperarm'+sd]['t']; L=np.linalg.norm(t-h); armB[sd]=(h,(t-h)/L,L)
+legset=B('thigh_l','thigh_r','calf_l','calf_r','foot_l','foot_r','ball_l','ball_r')
+for f in groups['helper-tights']:
+    d=fdom(f); ys=V[f][:,1]; c=V[f].mean(axis=0)
+    if d in B('spine_01','spine_02','spine_03','clavicle_l','clavicle_r','neck_01','pelvis'):
+        if ys.min()>waistY-.035 and ys.max()<neckY+.012: sel['cuirass'].append(f)
+    elif d in B('upperarm_l','upperarm_r','lowerarm_l','lowerarm_r'):
+        h,dv,L=armB['_l' if c[0]>0 else '_r']; sel['uarm' if (c-h)@dv<L-.012 else 'farm'].append(f)
+    elif d in legset:
+        if ys.max()<kneeY+.035: sel['shin'].append(f)
+        elif ys.max()<hemY+.05 and ys.min()>kneeY-.02: sel['thigh'].append(f)
+hand=[f for f in groups['body'] if fdom(f) in (B('hand_l','hand_r')|fingers)]
+skirt=[f for f in groups['helper-skirt'] if V[f][:,1].min()>hemY+.05 and V[f][:,1].max()<waistY+.03]
+# hair: grown from the scalp with a low hairline, short sides and volume on top
+cz=(hv[:,2].max()-.022+hv[:,2].min())/2; hz=(hv[:,2].max()-.022-hv[:,2].min())/2
+def hairline(z):
+    f0=eye[2]-.035; f1=eye[2]-.095; b=hv[:,2].min()+.055
+    if z>=f0: return eye[1]+.05
+    if z>=f1: return eye[1]+.05-(f0-z)/(f0-f1)*.048
+    if z>=b: return eye[1]+.002-(f1-z)/max(1e-6,f1-b)*.05
+    return eye[1]-.048
+scalp=[f for f in groups['body'] if all(dom[i]==headB for i in f) and all(V[i][1]>hairline(V[i][2]) for i in f)]
+def hair_off(i):
+    x,y,z=V[i]; top=min(1,max(0,(y-(eye[1]+.03))/.06)); top=top*top*(3-2*top); fr=max(0,(z-cz)/hz)
+    edge=min(1,max(0,(y-hairline(z))/.02))
+    n=.5+.5*math.sin(x*190+y*70)*math.cos(z*160+y*40)
+    return (.004+.019*top+.013*fr*top)*(.35+.65*edge)*(.86+.28*n)
+parts=[('hair',scalp,Nb,hair_off),('cuirass',sel['cuirass'],Nt,lambda i:.013),('skirt',skirt,Ns,lambda i:.02),('uarm',sel['uarm'],Nt,lambda i:.012),
+       ('farm',sel['farm'],Nt,lambda i:.010),('hand',hand,Nb,lambda i:.0055),('thigh',sel['thigh'],Nt,lambda i:.013),('shin',sel['shin'],Nt,lambda i:.012)]
+PP=[P3.astype(np.float64)];CC=[col];WI=list(used);TT=[T];ranges=[{'n':'body','start':0,'count':int(T.size)}];base=len(P3);istart=int(T.size)
+for name,faces,Nsrc,off in parts:
+    vs=sorted({i for f in faces for i in f}); rm={o:base+k for k,o in enumerate(vs)}
+    PP.append(np.array([V[i]+Nsrc[i]*off(i) for i in vs])); CC.append(np.ones((len(vs),3),dtype=np.float32)); WI+=vs
+    tt=[]
+    for f in faces:
+        for a in range(1,len(f)-1):
+            t=(rm[f[0]],rm[f[a]],rm[f[a+1]]); tt.append(t[::-1] if flip else t)
+    tt=np.array(tt,dtype=np.int64); TT.append(tt); ranges.append({'n':name,'start':istart,'count':int(tt.size)}); istart+=int(tt.size); base+=len(vs)
+    print(name,len(vs),len(tt))
+P3=np.vstack(PP); col=np.vstack(CC).astype(np.float32); T=np.vstack(TT); used=WI
+UV=np.stack([P3[:,0]*16+P3[:,2]*9,P3[:,1]*16+P3[:,2]*5],axis=1).astype(np.float32)
+# ---- skin weights (top 4, normalised to bytes)
+SI=np.zeros((len(P3),4),dtype=np.uint8); SW=np.zeros((len(P3),4),dtype=np.uint8)
+for n,o in enumerate(used):
+    w=sorted(wts[o],reverse=True)[:4] or [(1.0,0)]
+    tot=sum(a for a,_ in w); q=[int(round(a/tot*255)) for a,_ in w]; q[0]+=255-sum(q)
+    for k,(a,b) in enumerate(w): SI[n,k]=b; SW[n,k]=q[k]
+meta={'parts':ranges,'bones':[{'n':n,'p':bones[n]['p'],'h':[round(float(x),5) for x in bones[n]['h']],'t':[round(float(x),5) for x in bones[n]['t']]} for n in order],
+ 'nv':int(len(P3)),'ni':int(T.size),'cz':float(cz),'hz':float(hz),
+ 'lm':LM}
 hj=json.dumps(meta,separators=(',',':')).encode(); hj+=b' '*((4-len(hj)%4)%4)
 idx=T.astype(np.uint16 if len(P3)<65536 else np.uint32)
 with open(OUT,'wb') as f:
-    f.write(struct.pack('<I',len(hj))); f.write(hj); f.write(P3.astype(np.float32).tobytes()); f.write(col.tobytes()); f.write(SI.tobytes()); f.write(SW.tobytes()); f.write(idx.tobytes())
+    f.write(struct.pack('<I',len(hj))); f.write(hj); f.write(P3.astype(np.float32).tobytes()); f.write(col.tobytes()); f.write(UV.tobytes()); f.write(SI.tobytes()); f.write(SW.tobytes()); f.write(idx.tobytes())
 print('verts',len(P3),'tris',len(T),'bytes',os.path.getsize(OUT)); print(json.dumps(meta['lm']))
